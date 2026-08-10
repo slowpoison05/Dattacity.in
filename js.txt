@@ -1,0 +1,21 @@
+  // Set landing view initially
+  document.addEventListener("DOMContentLoaded", () => {
+    showView('landing');
+    renderWeatherForecast();
+    const intro = document.getElementById("appIntro");
+    if (intro && !intro.classList.contains("hidden")) {
+      document.body.classList.add("intro-active");
+    }
+  });
+
+  function openDattaCity() {
+    const intro = document.getElementById("appIntro");
+    const button = document.getElementById("introOpenBtn");
+    if (!intro || intro.classList.contains("is-opening")) return;
+    if (button) { button.disabled = true; button.setAttribute("aria-label", "Opening DattaCity"); }
+    intro.classList.add("is-opening");
+    document.body.classList.remove("intro-active");
+    window.setTimeout(() => {
+      intro.classList.add("hidden");
+    }, 1450);
+  }
