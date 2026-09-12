@@ -109,9 +109,7 @@
 
   async function fetchLive() {
     const key = getApiKey();
-    // If a government API key is configured, prefer the official API.
     if (key) return fetchGovernmentLive(key);
-    // Otherwise use DattaCity's server-side feed. This is the normal production path.
     return fetchServerLive();
   }
 
@@ -126,8 +124,6 @@
       writeCache(live);
       return live;
     } catch (error) {
-      // Never manufacture a price. If the live API is unavailable, use only a recent
-      // real cache; otherwise surface the reason to the UI.
       if (cached && Array.isArray(cached.records) && cached.records.length) {
         return cached.records.map(r => ({ ...r, fromCache: true }));
       }
@@ -147,4 +143,111 @@
       try { localStorage.removeItem('dattacity_mandi_api_key'); } catch (_) {}
     }
   };
+
+  /*
+   * Navigation fails in the legacy page because several generations of inline
+   * handlers compete for the same view state. This runtime-level router is
+   * intentionally independent of those handlers and works with touch/click.
+   * It is installed from mandiService because that script is already part of
+   * the application boot sequence, so no new HTML script tag is required.
+   */
+  const VIEW_NAMES = ['landing', 'services', 'marketplace', 'weather', 'fasal'];
+  let routerInstalled = false;
+  let currentView = 'landing';
+
+  function setView(name, push) {
+    if (!VIEW_NAMES.includes(name)) return false;
+    const target = document.getElementById('view-' + name);
+    if (!target) return false;
+
+    document.querySelectorAll('.view-section').forEach(view => {
+      view.classList.remove('active');
+      view.style.display = 'none';
+      view.setAttribute('aria-hidden', 'true');
+    });
+
+    target.classList.add('active');
+    target.style.display = 'flex';
+    target.setAttribute('aria-hidden', 'false');
+    currentView = name;
+
+    const back = document.getElementById('backBtn');
+    if (back) back.style.display = name === 'landing' ? 'none' : 'inline-flex';
+
+    const headerButtons = document.getElementById('headerButtons');
+    if (headerButtons) headerButtons.style.display = name === 'services' ? 'flex' : 'none';
+
+    const add = document.getElementById('headerAddServiceBtn');
+    const market = document.getElementById('headerMarketplaceBtn');
+    if (add) add.style.display = name === 'services' ? 'inline-block' : 'none';
+    if (market) market.style.display = name === 'services' ? 'inline-block' : 'none';
+
+    if (push) {
+      try { history.pushState({ dattacityView: name }, '', '#' + name); } catch (_) {}
+    }
+
+    window.scrollTo({ top: 0, behavior: 'instant' });
+
+    // Let existing modules refresh their content after the view becomes visible.
+    try {
+      if (name === 'services' && typeof window.renderServices === 'function') window.renderServices();
+      if (name === 'marketplace' && typeof window.renderMarketplace === 'function') window.renderMarketplace();
+      if (name === 'weather' && typeof window.fetchAndRenderWeather === 'function') window.fetchAndRenderWeather();
+      if (name === 'fasal' && typeof window.loadMandiRates === 'function') window.loadMandiRates(false);
+    } catch (error) {
+      console.warn('DattaCity view initialization:', error);
+    }
+    return true;
+  }
+
+  function viewForElement(element) {
+    if (!element) return null;
+    if (element.id === 'backBtn') return 'landing';
+    if (element.classList.contains('card-services')) return 'services';
+    if (element.classList.contains('card-buy') || element.classList.contains('card-sell')) return 'marketplace';
+    if (element.classList.contains('card-weather')) return 'weather';
+    if (element.classList.contains('card-fasal')) return 'fasal';
+    return null;
+  }
+
+  function handleNavigationEvent(event) {
+    const target = event.target;
+    if (!target || !target.closest) return;
+    const element = target.closest('.landing-card, #backBtn');
+    const name = viewForElement(element);
+    if (!name) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    setView(name, true);
+  }
+
+  function installRouter() {
+    if (routerInstalled) return;
+    routerInstalled = true;
+
+    // Capture phase guarantees this runs before legacy inline onclick handlers.
+    document.addEventListener('click', handleNavigationEvent, true);
+
+    // Touch support for Android WebViews/browsers that do not synthesize click.
+    document.addEventListener('touchend', handleNavigationEvent, { capture: true, passive: false });
+
+    window.addEventListener('popstate', () => {
+      const name = location.hash.replace('#', '');
+      setView(VIEW_NAMES.includes(name) ? name : 'landing', false);
+    });
+
+    window.showView = function (name) { return setView(name, true); };
+    window.openDattaView = window.showView;
+
+    const hash = location.hash.replace('#', '');
+    setView(VIEW_NAMES.includes(hash) ? hash : 'landing', false);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', installRouter, { once: true });
+  } else {
+    installRouter();
+  }
 })(window);
