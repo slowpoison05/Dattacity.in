@@ -3,7 +3,7 @@
   const V='9.23.0';
   const SDK=[`https://www.gstatic.com/firebasejs/${V}/firebase-app-compat.js`,`https://www.gstatic.com/firebasejs/${V}/firebase-auth-compat.js`,`https://www.gstatic.com/firebasejs/${V}/firebase-database-compat.js`,`https://www.gstatic.com/firebasejs/${V}/firebase-storage-compat.js`];
   const CFG={apiKey:'AIzaSyCvaXtUjp8xY5nRFXroL-H1ospFSgM7qQ0',authDomain:'superkisan-33b7e.firebaseapp.com',databaseURL:'https://superkisan-33b7e-default-rtdb.firebaseio.com',projectId:'superkisan-33b7e',storageBucket:'superkisan-33b7e.firebasestorage.app',messagingSenderId:'744234922644',appId:'1:744234922644:web:20b4c062d50d6265fdba81'};
-  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const esc=v=>String(v??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
   const first=(v,...ks)=>ks.map(k=>v?.[k]).find(x=>x!=null&&String(x).trim()!=='');
   const photos=v=>Array.isArray(v?.photos)?v.photos.filter(Boolean):(v?.photoURL||v?.image||v?.imageUrl||v?.photo||v?.profilePhoto?[v.photoURL||v.image||v.imageUrl||v.photo||v.profilePhoto]:[]);
   function status(t){const e=document.getElementById('dbStatus');if(e)e.textContent=t}
@@ -19,9 +19,19 @@
   }
 
   function inject(){
-    if(document.getElementById('dattacity-existing-services'))return;
+    if(document.getElementById('dattacity-service-hub'))return;
     const home=document.getElementById('home');if(!home)return;
-    const sec=document.createElement('section');sec.id='dattacity-existing-services';sec.className='section';sec.innerHTML='<div class="sectionHead"><div><div class="kicker">ALL DATTACITY SERVICES</div><h2>Every local service, in one place.</h2><p class="sectionLead">Live from the existing Firebase database.</p></div></div><div id="dcServicesList" class="cards"></div>';home.appendChild(sec);
+    const hub=document.createElement('section');hub.id='dattacity-service-hub';hub.className='section';
+    hub.innerHTML=`<div class="sectionHead"><div><div class="kicker">DATTACITY SERVICES</div><h2>Your village services</h2><p class="sectionLead">The important DattaCity services, together in one place.</p></div></div><div class="dcHubGrid">
+      <button class="dcHubCard" data-go="services"><span class="dcHubIcon">◉</span><strong>My Services</strong><small>Browse all local services from the existing Firebase directory.</small><span class="dcHubArrow">Open Services →</span></button>
+      <button class="dcHubCard" type="button"><span class="dcHubIcon">🏛</span><strong>Sarpanch Works</strong><small>Village development works, progress and public information.</small><span class="dcHubArrow">Sarpanch Works</span></button>
+      <button class="dcHubCard" type="button"><span class="dcHubIcon">⚠</span><strong>Complaint Portal</strong><small>Raise and follow community complaints and local issues.</small><span class="dcHubArrow">Complaint Portal</span></button>
+      <button class="dcHubCard dcHubLink" type="button" id="dcKhetiHub"><span class="dcHubIcon">🌿</span><strong>Kheti Health Centre</strong><small>Farmer-focused health and agriculture support.</small><span class="dcHubArrow">Open Kheti Health Centre ↗</span></button>
+      <button class="dcHubCard" type="button"><span class="dcHubIcon">🏃</span><strong>Sports</strong><small>Village sports, matches, activities and player updates.</small><span class="dcHubArrow">Sports</span></button>
+    </div>`;
+    const style=document.createElement('style');style.id='dcHubStyles';style.textContent='.dcHubGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.dcHubCard{position:relative;text-align:left;border:1px solid var(--line);background:#fff;border-radius:20px;padding:18px;min-height:190px;box-shadow:0 8px 28px rgba(16,24,40,.045);color:var(--ink);transition:transform .2s,box-shadow .2s,border-color .2s}.dcHubCard:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(16,24,40,.09);border-color:#c9d8cd}.dcHubIcon{width:42px;height:42px;border-radius:13px;background:var(--sage);display:grid;place-items:center;font-size:20px}.dcHubCard strong{display:block;font-family:Manrope;font-size:16px;margin-top:14px}.dcHubCard small{display:block;color:var(--muted);line-height:1.45;margin-top:6px;font-size:12px}.dcHubArrow{display:block;color:var(--green);font-size:11px;font-weight:800;margin-top:14px}.dcHubLink{cursor:pointer}@media(max-width:900px){.dcHubGrid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.dcHubGrid{grid-template-columns:1fr}.dcHubCard{min-height:145px}}';document.head.appendChild(style);home.appendChild(hub);
+    document.getElementById('dcKhetiHub').onclick=()=>location.href='https://kheti.dattacity.in';
+
     const kh=document.createElement('section');kh.className='section';kh.innerHTML='<div class="cta" style="margin-top:0"><div><div class="kicker" style="color:#ead6a5">FARMER SUPPORT</div><h2>Kheti Health Centre</h2><p>Open the existing farmer-focused health centre.</p></div><button type="button" id="khetiHealthBtn">Open Kheti Health Centre ↗</button></div>';home.appendChild(kh);
     document.getElementById('khetiHealthBtn').onclick=()=>location.href='https://kheti.dattacity.in';
   }
