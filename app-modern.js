@@ -3,7 +3,7 @@
   const V='9.23.0';
   const SDK=[`https://www.gstatic.com/firebasejs/${V}/firebase-app-compat.js`,`https://www.gstatic.com/firebasejs/${V}/firebase-auth-compat.js`,`https://www.gstatic.com/firebasejs/${V}/firebase-database-compat.js`,`https://www.gstatic.com/firebasejs/${V}/firebase-storage-compat.js`];
   const CFG={apiKey:'AIzaSyCvaXtUjp8xY5nRFXroL-H1ospFSgM7qQ0',authDomain:'superkisan-33b7e.firebaseapp.com',databaseURL:'https://superkisan-33b7e-default-rtdb.firebaseio.com',projectId:'superkisan-33b7e',storageBucket:'superkisan-33b7e.firebasestorage.app',messagingSenderId:'744234922644',appId:'1:744234922644:web:20b4c062d50d6265fdba81'};
-  const esc=v=>String(v??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
+  const esc=v=>String(v??'').replace(/[&<>\\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\"':'&quot;',"'":'&#39;'}[m]));
   const first=(v,...ks)=>ks.map(k=>v?.[k]).find(x=>x!=null&&String(x).trim()!=='');
   const photos=v=>Array.isArray(v?.photos)?v.photos.filter(Boolean):(v?.photoURL||v?.image||v?.imageUrl||v?.photo||v?.profilePhoto?[v.photoURL||v.image||v.imageUrl||v.photo||v.profilePhoto]:[]);
   function status(t){const e=document.getElementById('dbStatus');if(e)e.textContent=t}
@@ -14,7 +14,7 @@
     const lists=[document.getElementById('servicesList'),document.getElementById('dcServicesList')].filter(Boolean);
     if(!lists.length)return;
     if(!rows.length){lists.forEach(l=>l.innerHTML='<div class="notice">No services found.</div>');return}
-    const html=rows.map((x,i)=>{const n=first(x,'name','title','serviceName')||`Local service ${i+1}`,c=first(x,'category','type','serviceType')||'Service',d=first(x,'details','description','about','address')||'',p=first(x,'phone','phoneNumber','mobile','contact','contactNumber'),im=photos(x)[0];return `<article class="card"><div class="row">${im?`<img class="thumb" src="${esc(im)}" alt="">`:'<div class="thumb">◉</div>'}<div class="info"><h3>${esc(n)}</h3>${d?`<div class="muted">${esc(d)}</div>`:''}<span class="tag">${esc(c)}</span>${p?`<div class="actions"><a class="call" href="tel:${esc(p)}">Call</a><a class="call" target="_blank" rel="noopener" href="https://wa.me/${String(p).replace(/\D/g,'')}">WhatsApp</a></div>`:''}</div></div></article>`}).join('');
+    const html=rows.map((x,i)=>{const n=first(x,'name','title','serviceName')||`Local service ${i+1}`,c=first(x,'category','type','serviceType')||'Service',d=first(x,'details','description','about','address')||'',p=first(x,'phone','phoneNumber','mobile','contact','contactNumber'),im=photos(x)[0];return `<article class="card"><div class="row">${im?`<img class="thumb" src="${esc(im)}" alt="">`:'<div class="thumb">◉</div>'}<div class="info"><h3>${esc(n)}</h3>${d?`<div class="muted">${esc(d)}</div>`:''}<span class="tag">${esc(c)}</span>${p?`<div class="actions"><a class="call" href="tel:${esc(p)}">Call</a><a class="call" target="_blank" rel="noopener" href="https://wa.me/${String(p).replace(/\\D/g,'')}">WhatsApp</a></div>`:''}</div></div></article>`}).join('');
     lists.forEach(l=>l.innerHTML=html);
   }
 
@@ -24,13 +24,13 @@
     const hub=document.createElement('section');hub.id='dattacity-service-hub';hub.className='section';
     hub.innerHTML=`<div class="sectionHead"><div><div class="kicker">DATTACITY SERVICES</div><h2>Your village services</h2><p class="sectionLead">The important DattaCity services, together in one place.</p></div></div><div class="dcHubGrid">
       <button class="dcHubCard" data-go="services"><span class="dcHubIcon">◉</span><strong>My Services</strong><small>Browse all local services from the existing Firebase directory.</small><span class="dcHubArrow">Open Services →</span></button>
-      <button class="dcHubCard dcHubLink" type="button" id="dcSarpanchHub"><span class="dcHubIcon">🏛</span><strong>Sarpanch Works</strong><small>Haryana • Hisar • Hansi-I • Gram Panchayat Datta. Open official eGramSwaraj works and Panchayat information.</small><span class="dcHubArrow">Open eGramSwaraj ↗</span></button>
+      <button class="dcHubCard dcHubLink" type="button" id="dcSarpanchHub"><span class="dcHubIcon">🏛</span><strong>Sarpanch Works</strong><small>Haryana • Hisar • Hansi-I • Gram Panchayat Datta. View official Panchayat works, activities and public information on Meri Panchayat.</small><span class="dcHubArrow">Open Meri Panchayat ↗</span></button>
       <button class="dcHubCard" type="button"><span class="dcHubIcon">⚠</span><strong>Complaint Portal</strong><small>Raise and follow community complaints and local issues.</small><span class="dcHubArrow">Complaint Portal</span></button>
       <button class="dcHubCard dcHubLink" type="button" id="dcKhetiHub"><span class="dcHubIcon">🌿</span><strong>Kheti Health Centre</strong><small>Farmer-focused health and agriculture support.</small><span class="dcHubArrow">Open Kheti Health Centre ↗</span></button>
       <button class="dcHubCard" type="button"><span class="dcHubIcon">🏃</span><strong>Sports</strong><small>Village sports, matches, activities and player updates.</small><span class="dcHubArrow">Sports</span></button>
     </div>`;
     const style=document.createElement('style');style.id='dcHubStyles';style.textContent='.dcHubGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.dcHubCard{position:relative;text-align:left;border:1px solid var(--line);background:#fff;border-radius:20px;padding:18px;min-height:190px;box-shadow:0 8px 28px rgba(16,24,40,.045);color:var(--ink);transition:transform .2s,box-shadow .2s,border-color .2s}.dcHubCard:hover{transform:translateY(-4px);box-shadow:0 16px 36px rgba(16,24,40,.09);border-color:#c9d8cd}.dcHubIcon{width:42px;height:42px;border-radius:13px;background:var(--sage);display:grid;place-items:center;font-size:20px}.dcHubCard strong{display:block;font-family:Manrope;font-size:16px;margin-top:14px}.dcHubCard small{display:block;color:var(--muted);line-height:1.45;margin-top:6px;font-size:12px}.dcHubArrow{display:block;color:var(--green);font-size:11px;font-weight:800;margin-top:14px}.dcHubLink{cursor:pointer}@media(max-width:900px){.dcHubGrid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.dcHubGrid{grid-template-columns:1fr}.dcHubCard{min-height:145px}}';document.head.appendChild(style);home.appendChild(hub);
-    document.getElementById('dcSarpanchHub').onclick=()=>window.open('https://egramswaraj.gov.in','_blank','noopener');
+    document.getElementById('dcSarpanchHub').onclick=()=>window.open('https://meripanchayat.gov.in','_blank','noopener');
     document.getElementById('dcKhetiHub').onclick=()=>location.href='https://kheti.dattacity.in';
 
     const kh=document.createElement('section');kh.className='section';kh.innerHTML='<div class="cta" style="margin-top:0"><div><div class="kicker" style="color:#ead6a5">FARMER SUPPORT</div><h2>Kheti Health Centre</h2><p>Open the existing farmer-focused health centre.</p></div><button type="button" id="khetiHealthBtn">Open Kheti Health Centre ↗</button></div>';home.appendChild(kh);
@@ -72,7 +72,7 @@
       const f=await firebaseReady();
       const db=f.database();inject();
       let rows=[];
-      const renderLive=s=>{rows=[];s.forEach(c=>{const v=c.val();if(v&&typeof v==='object')rows.push({...v,_key:c.key})});render(rows);const count=document.getElementById('serviceCount');if(count)count.textContent=rows.length;status(`Connected • ${rows.length} services`)};
+      const renderLive=s=>{rows=[];s.forEach(c=>{const v=c.val();if(v&&typeof v==='object')rows.push({...v,_key:c.key)});render(rows);const count=document.getElementById('serviceCount');if(count)count.textContent=rows.length;status(`Connected • ${rows.length} services`)};
       let code=await fetch(CORE,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Core load failed');return r.text()});
       code=code.replace('storage=firebase.storage();','storage=(()=>{try{return firebase.storage()}catch(e){console.warn(e);return null}})();');
       (0,eval)(code);
