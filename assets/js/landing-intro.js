@@ -1,91 +1,95 @@
 (() => {
-  const VIEW_IDS = ['landing', 'services', 'marketplace', 'weather', 'fasal'];
+  const VIEWS = ['landing', 'services', 'marketplace', 'weather', 'fasal'];
 
-  function getView(name) {
-    return document.getElementById(`view-${name}`);
+  const getView = name => document.getElementById('view-' + name);
+
+  function cleanOverlays() {
+    document.querySelectorAll('#villageIntroOverlay, .village-intro-overlay').forEach(el => {
+      el.style.display = 'none';
+      el.style.pointerEvents = 'none';
+      el.remove();
+    });
+    document.body.classList.remove('village-intro-active');
   }
 
-  function removeBlockingOverlays() {
-    document.querySelectorAll('#villageIntroOverlay, .village-intro-overlay').forEach(el => el.remove());
-  }
-
-  function setActiveView(name) {
+  function show(name) {
+    if (!VIEWS.includes(name)) return false;
     const target = getView(name);
     if (!target) return false;
+    cleanOverlays();
 
     document.querySelectorAll('.view-section').forEach(view => {
-      const active = view === target;
-      view.classList.toggle('active', active);
-      view.style.display = active ? 'flex' : 'none';
+      view.classList.remove('active');
+      view.style.display = 'none';
     });
+    target.classList.add('active');
+    target.style.display = 'flex';
 
     const back = document.getElementById('backBtn');
-    const headerButtons = document.getElementById('headerButtons');
+    const buttons = document.getElementById('headerButtons');
     if (back) back.style.display = name === 'landing' ? 'none' : 'flex';
-    if (headerButtons) headerButtons.style.display = name === 'landing' ? 'none' : 'flex';
+    if (buttons) buttons.style.display = name === 'landing' ? 'none' : 'flex';
     window.scrollTo(0, 0);
-    return true;
-  }
 
-  function navigate(name) {
-    if (!VIEW_IDS.includes(name)) return false;
-    removeBlockingOverlays();
-    if (!setActiveView(name)) return false;
-
+    // Initialise the existing page modules when available.
     try {
       if (name === 'services' && typeof window.selectCategory === 'function') window.selectCategory('all');
       if (name === 'marketplace' && typeof window.selectMarketCategory === 'function') window.selectMarketCategory('marketplace-all');
       if (name === 'fasal' && typeof window.loadMandiRates === 'function') window.loadMandiRates(false);
       if (name === 'weather') {
-        ['loadWeather', 'loadWeatherData', 'fetchWeather', 'updateWeather'].some(fn => {
+        ['loadWeather','loadWeatherData','fetchWeather','updateWeather'].some(fn => {
           if (typeof window[fn] !== 'function') return false;
           window[fn]();
           return true;
         });
       }
-    } catch (_) {}
+    } catch (e) { console.warn('Datta City module init:', e); }
     return true;
   }
 
-  window.showView = navigate;
+  // Public API for existing code.
+  window.showView = show;
+  window.openDattaView = show;
 
-  function installNavigation() {
-    removeBlockingOverlays();
+  function viewFromCard(card) {
+    if (card.classList.contains('card-services')) return 'services';
+    if (card.classList.contains('card-buy') || card.classList.contains('card-sell')) return 'marketplace';
+    if (card.classList.contains('card-weather')) return 'weather';
+    if (card.classList.contains('card-fasal')) return 'fasal';
+    return null;
+  }
 
-    // Directly handle the landing cards. This avoids all legacy inline
-    // onclick/showView code and works on both touch and desktop clicks.
-    document.addEventListener('click', event => {
-      const card = event.target.closest('.landing-card');
-      if (card) {
-        let view = null;
-        if (card.classList.contains('card-services')) view = 'services';
-        else if (card.classList.contains('card-buy') || card.classList.contains('card-sell')) view = 'marketplace';
-        else if (card.classList.contains('card-weather')) view = 'weather';
-        else if (card.classList.contains('card-fasal')) view = 'fasal';
-        else if (card.classList.contains('card-kheti')) return; // keep external Kheti link
-        if (view) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          navigate(view);
-          return;
-        }
-      }
+  function handleNavigation(event) {
+    const el = event.target && event.target.closest ? event.target.closest('.landing-card, #backBtn') : null;
+    if (!el) return;
 
-      const back = event.target.closest('#backBtn');
-      if (back) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        navigate('landing');
-      }
-    }, true);
+    if (el.id === 'backBtn') {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      show('landing');
+      return;
+    }
 
-    const landing = getView('landing');
-    if (landing) setActiveView('landing');
+    const view = viewFromCard(el);
+    if (!view) return; // Kheti keeps its normal external link.
+
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    show(view);
+  }
+
+  function install() {
+    cleanOverlays();
+    // Capture phase runs before old inline handlers and legacy scripts.
+    document.addEventListener('click', handleNavigation, true);
+    document.addEventListener('pointerup', handleNavigation, true);
+    document.addEventListener('touchend', handleNavigation, true);
+    show('landing');
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', installNavigation, { once: true });
+    document.addEventListener('DOMContentLoaded', install, { once: true });
   } else {
-    installNavigation();
+    install();
   }
 })();
