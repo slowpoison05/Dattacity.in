@@ -45,7 +45,6 @@
 
   document.addEventListener('DOMContentLoaded', bindNavigation, {once:true});
 
-  // Firebase/data layer is isolated so a Firebase error can never disable navigation.
   try {
     const firebaseConfig = {
       apiKey:'AIzaSyCvaXtUjp8xY5nRFXroL-H1ospFSgM7qQ0',
@@ -56,11 +55,12 @@
       messagingSenderId:'744234922644',
       appId:'1:744234922644:web:20b4c062d50d6265fdba81'
     };
-    firebase.initializeApp(firebaseConfig);
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     let services = [], market = [];
 
     const esc = value => String(value ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    const visible = x => !['pending','rejected','blocked'].includes(String(x.status || '').toLowerCase());
 
     window.loadWeather = async function() {
       try {
@@ -73,16 +73,16 @@
 
     function renderServices() {
       const q = ($('globalSearch').value || '').toLowerCase();
-      const list = services.filter(x => x.status !== 'pending').filter(x => !q || JSON.stringify(x).toLowerCase().includes(q));
+      const list = services.filter(visible).filter(x => !q || JSON.stringify(x).toLowerCase().includes(q));
       $('serviceCount').textContent = list.length;
-      $('servicesList').innerHTML = list.length ? list.map(x => `<article class="card"><div class="row"><div class="thumb">${x.image ? `<img class="thumb" src="${esc(x.image)}">` : '◉'}</div><div class="info"><h3>${esc(x.name || 'Service')}</h3><div class="muted">${esc(x.details || x.description || '')}</div><span class="tag">${esc(x.category || 'other')}</span>${x.phone ? `<div class="actions"><a class="call" href="tel:${esc(x.phone)}">Call</a></div>` : ''}</div></div></article>`).join('') : '<div class="notice">No services found.</div>';
+      $('servicesList').innerHTML = list.length ? list.map(x => `<article class="card"><div class="row"><div class="thumb">${x.image ? `<img class="thumb" src="${esc(x.image)}" alt="">` : '◉'}</div><div class="info"><h3>${esc(x.name || x.title || x.serviceName || 'Service')}</h3><div class="muted">${esc(x.details || x.description || x.address || '')}</div><span class="tag">${esc(x.category || x.type || 'other')}</span>${x.phone || x.mobile || x.contact ? `<div class="actions"><a class="call" href="tel:${esc(x.phone || x.mobile || x.contact)}">Call</a></div>` : ''}</div></div></article>`).join('') : '<div class="notice">No services found.</div>';
     }
 
     function renderMarket() {
       const q = ($('globalSearch').value || '').toLowerCase();
-      const list = market.filter(x => x.status !== 'pending').filter(x => !q || JSON.stringify(x).toLowerCase().includes(q));
+      const list = market.filter(visible).filter(x => !q || JSON.stringify(x).toLowerCase().includes(q));
       $('marketCount').textContent = list.length;
-      $('marketList').innerHTML = list.length ? list.map(x => `<article class="card"><div class="row"><div class="thumb">${x.image ? `<img class="thumb" src="${esc(x.image)}">` : '◇'}</div><div class="info"><h3>${esc(x.productName || x.name || 'Listing')}</h3><div class="muted">${esc(x.description || x.details || '')}</div>${x.price ? `<b>₹${esc(x.price)}</b>` : ''}<div><span class="tag">${x.listingType === 'buy' ? 'Wanted' : 'For sale'}</span></div>${x.phone ? `<div class="actions"><a class="call" href="tel:${esc(x.phone)}">Call</a></div>` : ''}</div></div></article>`).join('') : '<div class="notice">No listings found.</div>';
+      $('marketList').innerHTML = list.length ? list.map(x => `<article class="card"><div class="row"><div class="thumb">${x.image ? `<img class="thumb" src="${esc(x.image)}" alt="">` : '◇'}</div><div class="info"><h3>${esc(x.productName || x.name || x.title || 'Listing')}</h3><div class="muted">${esc(x.description || x.details || '')}</div>${x.price ? `<b>₹${esc(x.price)}</b>` : ''}<div><span class="tag">${String(x.listingType || '').toLowerCase() === 'buy' ? 'Wanted' : 'For sale'}</span></div>${x.phone || x.mobile || x.contact ? `<div class="actions"><a class="call" href="tel:${esc(x.phone || x.mobile || x.contact)}">Call</a></div>` : ''}</div></div></article>`).join('') : '<div class="notice">No listings found.</div>';
     }
 
     window.loadMandi = async function() {
@@ -102,13 +102,39 @@
       $('mandiTable').innerHTML = list.length ? `<table><tr><th>Crop</th><th>Mandi</th><th>Min</th><th>Max</th><th>Modal</th></tr>${list.map(x => `<tr><td>${esc(x.commodity)}</td><td>${esc(x.market)}</td><td>₹${esc(x.min_price)}</td><td>₹${esc(x.max_price)}</td><td><b>₹${esc(x.modal_price)}</b></td></tr>`).join('')}</table>` : '<div class="notice">No matching prices.</div>';
     }
 
+    function readNode(path, callback) {
+      db.ref(path).once('value').then(snap => {
+        const rows = [];
+        snap.forEach(c => {
+          const value = c.val();
+          if (value && typeof value === 'object') rows.push({_key:c.key, ...value});
+        });
+        callback(rows);
+      }).catch(error => {
+        console.error('Firebase read error:', path, error);
+        const status = $('dbStatus');
+        if (status) status.textContent = 'Firebase error';
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       $('globalSearch').oninput = () => { renderServices(); renderMarket(); };
       $('mandiSearch').oninput = renderMandi;
       $('mandiRefresh').onclick = window.loadMandi;
-      db.ref('services').on('value', snap => { services = []; snap.forEach(c => services.push({_key:c.key, ...c.val()})); renderServices(); });
-      db.ref('marketplace').on('value', snap => { market = []; snap.forEach(c => market.push({_key:c.key, ...c.val()})); renderMarket(); });
-      $('dbStatus').textContent = 'Live';
+
+      // Read the existing Firebase database only. Nothing is written, deleted, or migrated.
+      db.ref('services').on('value', snap => {
+        services = [];
+        snap.forEach(c => { const value = c.val(); if (value && typeof value === 'object') services.push({_key:c.key, ...value}); });
+        renderServices();
+        $('dbStatus').textContent = 'Live';
+      }, error => { console.error(error); $('dbStatus').textContent = 'Firebase error'; });
+
+      db.ref('marketplace').on('value', snap => {
+        market = [];
+        snap.forEach(c => { const value = c.val(); if (value && typeof value === 'object') market.push({_key:c.key, ...value}); });
+        renderMarket();
+      }, error => { console.error(error); $('dbStatus').textContent = 'Firebase error'; });
     }, {once:true});
   } catch (error) {
     console.error('Firebase unavailable:', error);
