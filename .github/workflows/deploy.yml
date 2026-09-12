@@ -24,25 +24,27 @@ jobs:
           path = Path("index.html")
           text = path.read_text(encoding="utf-8")
 
-          # Keep the premium theme enabled.
           theme = '<link rel="stylesheet" href="theme.css">'
           if theme not in text:
               text = text.replace('</head>', f'  {theme}\n</head>', 1)
 
-          # The intro layer was previously able to block the actual landing page.
-          # Load a fail-safe controller after the page markup exists.
+          # Fail-safe landing controller. It removes the decorative intro so it can never block navigation.
           landing_script = '<script src="assets/js/landing-intro.js"></script>'
           if landing_script not in text:
               text = text.replace('</body>', f'  {landing_script}\n</body>', 1)
 
-          # Inject the government API key only when the repository secret exists.
-          # The key is public/client-side by nature, but keeping it out of git prevents accidental commits.
+          # Government API key is optional. If present, the app uses the official JSON API.
           marker = '<script>window.DATTA_MANDI_API_KEY='
           if marker not in text:
               key = __import__('os').environ.get('DATA_GOV_API_KEY', '')
               safe = key.replace('\\', '\\\\').replace("'", "\\'")
               injection = f"<script>window.DATTA_MANDI_API_KEY='{safe}';</script>"
               text = text.replace('</head>', f'  {injection}\n</head>', 1)
+
+          # When no API key is configured, show the live Haryana Agmarknet/APMC embed instead of fake prices.
+          fallback = '<script src="assets/js/mandi-widget-fallback.js"></script>'
+          if fallback not in text:
+              text = text.replace('</body>', f'  {fallback}\n</body>', 1)
 
           path.write_text(text, encoding='utf-8')
           PY
@@ -55,6 +57,7 @@ jobs:
           test -f assets/css/landing-intro.css
           test -f assets/js/landing-intro.js
           test -f assets/js/mandiService.js
+          test -f assets/js/mandi-widget-fallback.js
 
       - name: Deploy website to HostEasy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
