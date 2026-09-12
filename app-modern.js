@@ -1,8 +1,40 @@
 (()=>{
   const CORE='https://raw.githubusercontent.com/slowpoison05/Dattacity.in/d2259a62c81e7fa9da3052e4007aeaa460210e37/app-modern.js';
-  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const FIREBASE_VERSION='9.23.0';
+  const FIREBASE_SDKS=[
+    `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app-compat.js`,
+    `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth-compat.js`,
+    `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-database-compat.js`,
+    `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-storage-compat.js`
+  ];
+  const esc=v=>String(v??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
   const photos=v=>Array.isArray(v?.photos)?v.photos.filter(Boolean):(v?.photoURL||v?.image||v?.imageUrl||v?.photo||v?.profilePhoto?[v.photoURL||v.image||v.imageUrl||v.photo||v.profilePhoto]:[]);
   const first=(v,...keys)=>keys.map(k=>v?.[k]).find(x=>x!==undefined&&x!==null&&String(x).trim()!=='');
+
+  function setStatus(text){
+    const status=document.getElementById('dbStatus');
+    if(status) status.textContent=text;
+  }
+
+  function loadScript(src){
+    return new Promise((resolve,reject)=>{
+      const existing=[...document.scripts].find(s=>s.src===src);
+      if(existing){existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});if(existing.dataset.loaded==='1')resolve();return;}
+      const s=document.createElement('script');
+      s.src=src;s.async=false;
+      s.onload=()=>{s.dataset.loaded='1';resolve();};
+      s.onerror=()=>reject(new Error('Failed to load '+src));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function ensureFirebase(){
+    if(!window.firebase || typeof window.firebase.initializeApp!=='function'){
+      for(const src of FIREBASE_SDKS) await loadScript(src);
+    }
+    if(!window.firebase) throw new Error('Firebase SDK did not load');
+    return window.firebase;
+  }
 
   function injectServices(){
     if(document.getElementById('dattacity-existing-services')) return;
@@ -52,7 +84,9 @@
   }
 
   async function start(){
+    setStatus('Connecting…');
     try{
+      await ensureFirebase();
       if(window.firebase&&typeof window.firebase.storage!=='function') window.firebase.storage=()=>null;
       const code=await fetch(CORE,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Core load failed');return r.text()});
       (0,eval)(code);
@@ -60,21 +94,22 @@
       injectServices();
       installServiceNavigation();
       const db=window.firebase?.database?.();
-      if(!db){console.warn('DattaCity Firebase database is unavailable');return;}
+      if(!db){setStatus('Firebase unavailable');console.warn('DattaCity Firebase database is unavailable');return;}
       db.ref('services').on('value',snap=>{
         const rows=[];
         snap.forEach(c=>{const v=c.val();if(v&&typeof v==='object')rows.push(v)});
         renderServices(rows);
         const count=document.getElementById('serviceCount');
         if(count) count.textContent=rows.length;
-        const status=document.getElementById('dbStatus');
-        if(status) status.textContent='Connected';
+        setStatus('Connected');
       },err=>{
         console.error('Firebase services read failed',err);
-        const status=document.getElementById('dbStatus');
-        if(status) status.textContent='Offline';
+        setStatus('Firebase error');
       });
-    }catch(e){console.error('DattaCity startup/Firebase compatibility',e)}
+    }catch(e){
+      console.error('DattaCity startup/Firebase compatibility',e);
+      setStatus('Firebase error');
+    }
   }
   start();
 })();
