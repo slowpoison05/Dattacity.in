@@ -1,37 +1,101 @@
-/* DattaCity landing entrance - fail-safe and mobile-first */
-.village-intro-overlay {
-  display: none !important;
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: linear-gradient(180deg,#dff3ff 0%,#eef8df 58%,#78a94d 58%,#477b2d 100%);
-  overflow: hidden;
-}
+/* DATTA CITY — Modern product UI v3
+   Visual-only redesign. Existing HTML IDs/classes remain intact so the app logic
+   (Firebase, marketplace, services, weather and mandi) keeps working. */
+:root{--dc-ink:#101828;--dc-muted:#667085;--dc-bg:#f7f8fa;--dc-card:#fff;--dc-line:#e4e7ec;--dc-brand:#176b4d;--dc-brand2:#22a06b;--dc-accent:#d7a62a;--dc-dark:#101828;--dc-radius:18px;--dc-shadow:0 10px 30px rgba(16,24,40,.07)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{margin:0!important;background:var(--dc-bg)!important;color:var(--dc-ink)!important;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
 
-/* The main landing page must remain usable even if the intro script/CSS fails. */
-.village-intro-overlay.is-visible { display: grid !important; }
-.village-intro-overlay.is-closing { pointer-events: none; opacity: 0; transition: opacity .35s ease; }
-.village-intro-overlay .village-sky,
-.village-intro-overlay .wheat-fields,
-.village-intro-overlay .tractor-silhouette,
-.village-intro-overlay .village-house { position: absolute; }
-.village-intro-overlay .village-sky { inset: 0; }
-.village-intro-overlay .sun { position:absolute; top:8%; right:10%; width:90px; height:90px; border-radius:50%; background:#ffd65a; box-shadow:0 0 50px rgba(255,214,90,.55); }
-.village-intro-overlay .wheat-fields { left:0; right:0; bottom:0; height:42%; background:repeating-linear-gradient(168deg,transparent 0 24px,rgba(27,94,32,.2) 25px 28px); }
-.village-intro-overlay .village-house { left:50%; top:50%; transform:translate(-50%,-50%); width:min(520px,86vw); height:220px; }
-.village-intro-overlay .mud-wall { position:absolute; inset:45px 0 0; border-radius:18px 18px 4px 4px; background:#d9b47b; box-shadow:inset 0 -18px rgba(104,72,31,.12); }
-.village-intro-overlay .house-header { position:absolute; top:0; left:0; right:0; text-align:center; }
-.village-intro-overlay .house-header h1 { margin:0; color:#1b5e20; font-size:clamp(36px,8vw,64px); font-weight:900; }
-.village-intro-overlay .house-header p { margin:6px 0; color:#294429; font-weight:700; }
-.village-intro-overlay .door-frame { position:absolute; left:50%; bottom:0; transform:translateX(-50%); width:150px; height:145px; display:flex; background:#714b27; border-radius:12px 12px 0 0; overflow:hidden; }
-.village-intro-overlay .wooden-door { position:relative; flex:1; background:#8b5a2b; border:2px solid #5e3b1c; }
-.village-intro-overlay .door-panel { margin:12px 10px; height:45px; border:2px solid rgba(255,255,255,.12); }
-.village-intro-overlay .door-handle { position:absolute; top:72px; right:8px; width:8px; height:8px; border-radius:50%; background:#e4b64e; }
-.village-intro-overlay .intro-controls { position:absolute; left:0; right:0; bottom:7%; display:flex; justify-content:center; gap:10px; }
-.village-intro-overlay .enter-btn { border:0; border-radius:999px; background:#1b5e20; color:#fff; padding:14px 22px; font-weight:800; cursor:pointer; box-shadow:0 12px 30px rgba(27,94,32,.25); }
-.village-intro-overlay .skip-intro { border:1px solid rgba(27,94,32,.35); border-radius:999px; background:rgba(255,255,255,.7); color:#1b5e20; padding:12px 18px; font-weight:700; cursor:pointer; }
-@media (max-width:600px){
-  .village-intro-overlay .village-house { top:43%; }
-  .village-intro-overlay .intro-controls { bottom:5%; flex-direction:column; align-items:center; }
-  .village-intro-overlay .enter-btn,.village-intro-overlay .skip-intro { width:min(90vw,360px); }
+/* Remove the old decorative village entrance completely. */
+.village-intro-overlay{display:none!important}
+
+/* Header / product navigation */
+header{position:sticky!important;top:0!important;z-index:1000!important;background:rgba(255,255,255,.92)!important;color:var(--dc-ink)!important;border-bottom:1px solid var(--dc-line)!important;box-shadow:0 4px 18px rgba(16,24,40,.05)!important;backdrop-filter:blur(18px)!important;padding:0!important;text-align:left!important}
+.header-content{max-width:1240px!important;margin:auto!important;padding:12px 22px!important;display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:space-between!important;gap:18px!important}
+.header-top{width:auto!important;display:flex!important;align-items:center!important;justify-content:flex-start!important}
+header h2{font-size:0!important;color:var(--dc-ink)!important;margin:0!important;letter-spacing:-.04em!important;font-weight:900!important;line-height:1!important}
+header h2:after{content:"DATTA CITY";font-size:20px;letter-spacing:-.04em;color:var(--dc-dark)}
+header p{display:none!important}
+.header-buttons{margin:0!important;display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:nowrap!important}
+.admin-btn,.user-add-btn,.sell-btn{min-height:38px!important;padding:8px 13px!important;border-radius:10px!important;font-size:13px!important;font-weight:750!important;border:1px solid var(--dc-line)!important;box-shadow:none!important}
+.admin-btn{background:#fff!important;color:var(--dc-ink)!important}
+.user-add-btn{background:var(--dc-brand)!important;color:#fff!important}
+.sell-btn{background:var(--dc-accent)!important;color:#fff!important}
+
+/* App layout */
+.main-wrapper{min-height:calc(100vh - 65px)!important;display:block!important}
+.sidebar{width:100%!important;height:auto!important;position:sticky!important;top:65px!important;z-index:900!important;background:rgba(247,248,250,.94)!important;border:0!important;border-bottom:1px solid var(--dc-line)!important;box-shadow:none!important;padding:10px 18px!important;backdrop-filter:blur(14px)!important}
+.sidebar-header{display:none!important}
+.sidebar-categories{max-width:1240px!important;margin:auto!important;display:flex!important;gap:7px!important;overflow-x:auto!important;padding:0!important;scrollbar-width:none!important}
+.sidebar-categories::-webkit-scrollbar{display:none}
+.sidebar-section-title{display:none!important}
+.cat-btn{flex:0 0 auto!important;width:auto!important;min-height:38px!important;padding:8px 13px!important;border:1px solid var(--dc-line)!important;border-radius:999px!important;background:#fff!important;color:#475467!important;box-shadow:none!important;font-size:13px!important;font-weight:700!important;display:flex!important;flex-direction:row!important;gap:6px!important}
+.cat-btn .cat-icon{font-size:0!important;margin:0!important}
+.cat-btn .cat-icon:after{font-size:14px;content:"•";color:var(--dc-brand2)}
+.cat-btn .cat-count{position:static!important;padding:0!important;background:none!important;color:#98a2b3!important;font-size:11px!important}
+.cat-btn.active{background:var(--dc-dark)!important;border-color:var(--dc-dark)!important;color:#fff!important}
+.cat-btn.active .cat-count{background:none!important;color:#d0d5dd!important}
+.cat-btn.marketplace-btn.active{background:var(--dc-brand)!important;border-color:var(--dc-brand)!important;color:#fff!important}
+
+/* Search */
+.search-box{position:sticky!important;top:113px!important;z-index:700!important;background:rgba(247,248,250,.88)!important;border:0!important;padding:12px 18px!important;backdrop-filter:blur(14px)!important}
+.search-box input{width:min(100%,900px)!important;height:50px!important;margin:auto!important;display:block!important;border:1px solid var(--dc-line)!important;border-radius:14px!important;background:#fff!important;color:var(--dc-ink)!important;padding:0 17px!important;box-shadow:0 5px 16px rgba(16,24,40,.05)!important}
+.search-box input:focus{border-color:var(--dc-brand2)!important;box-shadow:0 0 0 4px rgba(34,160,107,.10)!important}
+
+/* Landing / dashboard */
+.content-area{width:100%!important;display:block!important}
+.view-section{width:100%!important}
+.view-section.active{display:flex!important;animation:dcIn .28s ease-out!important}
+@keyframes dcIn{from{opacity:.3;transform:translateY(5px)}to{opacity:1;transform:none}}
+.landing-wrapper{width:100%!important;min-height:calc(100vh - 115px)!important;padding:42px 20px 70px!important;display:flex!important;align-items:center!important;background:var(--dc-bg)!important}
+.landing-wrapper>div:first-child{width:min(1120px,100%)!important;margin:0 auto 22px!important;padding:42px 0 0!important;background:none!important;border:0!important;box-shadow:none!important;text-align:left!important}
+.landing-wrapper>div:first-child h1{font-size:clamp(34px,6vw,64px)!important;line-height:1.02!important;letter-spacing:-.065em!important;color:var(--dc-dark)!important;max-width:760px!important;font-weight:900!important}
+.landing-wrapper>div:first-child p{font-size:16px!important;color:var(--dc-muted)!important;max-width:650px!important;line-height:1.6!important}
+.landing-wrapper>div:first-child:after{content:"Your local services, marketplace, weather and prices — in one place.";display:block!important;margin-top:12px!important;color:var(--dc-muted)!important;font-size:13px!important}
+.landing-grid{width:min(1120px,100%)!important;max-width:none!important;margin:0 auto!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important}
+.landing-card{min-height:175px!important;padding:24px!important;border:1px solid var(--dc-line)!important;border-radius:var(--dc-radius)!important;background:#fff!important;box-shadow:var(--dc-shadow)!important;text-align:left!important;align-items:flex-start!important;justify-content:flex-end!important;gap:7px!important}
+.landing-card:before{height:3px!important;background:var(--dc-brand2)!important;opacity:1!important}
+.landing-card .icon{font-size:34px!important;margin:0 0 auto!important;filter:none!important}
+.landing-card .title{font-size:18px!important;color:var(--dc-dark)!important;font-weight:800!important;letter-spacing:-.02em!important}
+.landing-card .desc{font-size:13px!important;color:var(--dc-muted)!important;line-height:1.45!important}
+.landing-card:hover{transform:translateY(-4px)!important;box-shadow:0 18px 40px rgba(16,24,40,.10)!important;border-color:#cfd5dd!important}
+
+/* Content cards */
+.container{width:min(100%,1000px)!important;padding:12px 18px 60px!important;margin:auto!important}
+.card{background:#fff!important;border:1px solid var(--dc-line)!important;border-radius:16px!important;box-shadow:0 5px 18px rgba(16,24,40,.05)!important;margin:10px 0!important;padding:16px!important}
+.card:hover{transform:none!important;box-shadow:0 10px 28px rgba(16,24,40,.08)!important}
+.card-info h3{color:var(--dc-dark)!important;font-weight:800!important}
+.card-info p{color:var(--dc-muted)!important}
+.card.marketplace-card{border-left:3px solid var(--dc-accent)!important}
+.card.marketplace-card .card-info h3{color:var(--dc-dark)!important}
+.card-photo{border:1px solid var(--dc-line)!important}
+.card-photo-placeholder{background:#f2f4f7!important}
+
+/* Forms and dialogs */
+input,select,textarea{border:1px solid var(--dc-line)!important;border-radius:10px!important;background:#fff!important;color:var(--dc-ink)!important}
+input:focus,select:focus,textarea:focus{outline:none!important;border-color:var(--dc-brand2)!important;box-shadow:0 0 0 3px rgba(34,160,107,.10)!important}
+#userAddPanel,#marketplacePanel,#adminPanel{border:1px solid var(--dc-line)!important;border-radius:18px!important;background:#fff!important;box-shadow:0 25px 70px rgba(16,24,40,.18)!important}
+.user-submit-btn,.marketplace-submit-btn,.add-btn,.approve-btn,.call-btn{background:var(--dc-brand)!important;color:#fff!important;border-radius:10px!important;box-shadow:none!important}
+.whatsapp-btn{background:#25a366!important;color:#fff!important;border-radius:10px!important}
+
+/* Mandi: modern data dashboard */
+#view-fasal{background:var(--dc-bg)!important}
+#view-fasal .container{max-width:1100px!important}
+#mandiRatesList{border-radius:16px!important}
+.dattacity-mandi-live{background:#fff!important;border:1px solid var(--dc-line)!important;border-radius:18px!important;padding:14px!important;box-shadow:var(--dc-shadow)!important}
+.dattacity-mandi-live>div:first-child{background:var(--dc-dark)!important;color:#fff!important;border:0!important;border-radius:12px!important}
+.dattacity-mandi-live table{font-size:13px!important}
+.dattacity-mandi-live th{background:#f9fafb!important;color:#475467!important;font-weight:750!important}
+.dattacity-mandi-live td{color:#344054!important}
+.dattacity-mandi-live td:last-child{color:var(--dc-brand)!important}
+
+/* Mobile */
+@media(max-width:760px){
+ header{position:sticky!important} .header-content{padding:10px 14px!important}.header-buttons{gap:5px!important}.admin-btn,.user-add-btn,.sell-btn{padding:7px 9px!important;font-size:11px!important}
+ .sidebar{top:59px!important;padding:8px 10px!important}.search-box{top:107px!important;padding:9px 10px!important}
+ .landing-wrapper{padding:24px 14px 50px!important;display:block!important}.landing-wrapper>div:first-child{padding-top:20px!important}.landing-wrapper>div:first-child h1{font-size:38px!important}.landing-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.landing-card{min-height:155px!important;padding:18px!important}.landing-card .title{font-size:16px!important}
+ .container{padding:8px 10px 45px!important}.card{padding:12px!important}.card-left{gap:10px!important}.card-photo,.card-photo-placeholder{width:54px!important;height:54px!important}
 }
+@media(max-width:430px){.landing-grid{grid-template-columns:1fr 1fr!important}.landing-card{min-height:145px!important}.landing-card .icon{font-size:28px!important}header h2:after{font-size:17px!important}}
