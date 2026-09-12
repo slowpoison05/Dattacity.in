@@ -10,12 +10,10 @@
     if (!target) return false;
 
     document.querySelectorAll('.view-section').forEach(view => {
-      view.classList.toggle('active', view === target);
-      if (view !== target) view.style.display = 'none';
+      const active = view === target;
+      view.classList.toggle('active', active);
+      view.style.display = active ? 'flex' : 'none';
     });
-
-    target.classList.add('active');
-    target.style.display = name === 'landing' ? 'flex' : 'flex';
 
     const back = document.getElementById('backBtn');
     const headerButtons = document.getElementById('headerButtons');
@@ -26,12 +24,10 @@
     return true;
   }
 
-  // Central navigation controller. Keep it independent from the visual redesign
-  // so every existing landing-card/category button continues to reveal its view.
-  window.showView = function(name) {
-    if (!VIEW_IDS.includes(name)) return false;
-    const opened = setActiveView(name);
-    if (!opened) return false;
+  // Central navigation controller. It deliberately runs again on DOM ready so
+  // legacy inline scripts cannot overwrite the working navigation after load.
+  const navigate = function(name) {
+    if (!VIEW_IDS.includes(name) || !setActiveView(name)) return false;
 
     if (name === 'services' && typeof window.selectCategory === 'function') {
       try { window.selectCategory('all'); } catch (_) {}
@@ -46,14 +42,13 @@
         return true;
       });
     }
-    if (name === 'fasal') {
-      if (typeof window.loadMandiRates === 'function') {
-        try { window.loadMandiRates(false); } catch (_) {}
-      }
+    if (name === 'fasal' && typeof window.loadMandiRates === 'function') {
+      try { window.loadMandiRates(false); } catch (_) {}
     }
-
     return true;
   };
+
+  window.showView = navigate;
 
   function removeOldIntro() {
     const overlay = document.getElementById('villageIntroOverlay');
@@ -62,15 +57,15 @@
 
   function ensureNavigationWorks() {
     removeOldIntro();
+    // Reinstall after every legacy inline script has executed.
+    window.showView = navigate;
 
-    // Some older handlers rely on the landing view being explicitly active.
     const landing = getView('landing');
     if (landing && !document.querySelector('.view-section.active')) {
       setActiveView('landing');
     }
 
-    // Fix duplicate mobile overlay IDs from the legacy markup without deleting
-    // either element's functionality.
+    // The legacy markup accidentally contains two identical overlay IDs.
     const overlays = document.querySelectorAll('#sidebarOverlay');
     overlays.forEach((el, i) => {
       if (i > 0) el.id = `sidebarOverlay${i + 1}`;
