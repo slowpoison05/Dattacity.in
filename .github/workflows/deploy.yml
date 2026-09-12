@@ -14,6 +14,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
+      - name: Inject DattaCity visual theme
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("index.html")
+          text = path.read_text(encoding="utf-8")
+          marker = '<link rel="stylesheet" href="theme.css">'
+          if marker not in text:
+              text = text.replace('</head>', f'  {marker}\n</head>', 1)
+              path.write_text(text, encoding="utf-8")
+          PY
+
       - name: Deploy website to HostEasy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
