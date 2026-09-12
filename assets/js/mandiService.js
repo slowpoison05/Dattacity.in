@@ -1,13 +1,15 @@
 /* DattaCity Live Mandi Service
- * Source: Government of India Open Government Data / Agmarknet dataset.
- * The API key is intentionally supplied at deploy/runtime, never hard-coded in source.
+ * Primary source: Government of India Open Government Data / Agmarknet dataset.
+ * When no data.gov.in API key is configured, use DattaCity's own Vercel
+ * server route (/api/mandi) so the browser does not depend on CORS or iframes.
  */
 (function (window) {
   'use strict';
 
   const RESOURCE = '9ef84268-d588-465a-a308-a864a43d0070';
   const API_BASE = 'https://api.data.gov.in/resource/' + RESOURCE;
-  const CACHE_KEY = 'dattacity_mandi_cache_v2';
+  const SERVER_API = '/api/mandi';
+  const CACHE_KEY = 'dattacity_mandi_cache_v3';
   const CACHE_TTL = 30 * 60 * 1000;
 
   const MANDIS = [
@@ -79,33 +81,38 @@
     const response = await fetch(url, { cache: 'no-store', headers: { Accept: 'application/json' } });
     if (!response.ok) throw new Error('Mandi API HTTP ' + response.status);
     const data = await response.json();
-    if (!data.records || !Array.isArray(data.records)) throw new Error('Mandi API returned no records');
+    if (!Array.isArray(data.records)) throw new Error('Mandi API returned no records');
     return data.records.map(normalizeRecord);
   }
 
-  async function fetchLive() {
-    const key = getApiKey();
-    if (!key) {
-      throw new Error('DATA_GOV_API_KEY_MISSING');
-    }
+  async function fetchServerLive() {
+    const records = await request(SERVER_API + '?t=' + Date.now());
+    if (!records.length) throw new Error('NO_SERVER_MANDI_RECORDS');
+    return records;
+  }
 
+  async function fetchGovernmentLive(key) {
     const params = new URLSearchParams({
       'api-key': key,
       format: 'json',
       limit: '500',
       offset: '0'
     });
-
-    // Pull Haryana records, then keep the requested Hisar-area mandis in the browser.
     params.set('filters[state]', 'Haryana');
     const records = await request(API_BASE + '?' + params.toString());
 
     const wanted = new Set(MANDIS.map(m => m.key.toLowerCase()));
     const filtered = records.filter(r => wanted.has(String(r.market).toLowerCase()));
-    if (!filtered.length) {
-      throw new Error('NO_HARYANA_MANDI_RECORDS');
-    }
+    if (!filtered.length) throw new Error('NO_HARYANA_MANDI_RECORDS');
     return filtered;
+  }
+
+  async function fetchLive() {
+    const key = getApiKey();
+    // If a government API key is configured, prefer the official API.
+    if (key) return fetchGovernmentLive(key);
+    // Otherwise use DattaCity's server-side feed. This is the normal production path.
+    return fetchServerLive();
   }
 
   async function getRates(forceRefresh) {
