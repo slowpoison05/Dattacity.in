@@ -5,8 +5,6 @@
 
   function cleanOverlays() {
     document.querySelectorAll('#villageIntroOverlay, .village-intro-overlay').forEach(el => {
-      el.style.display = 'none';
-      el.style.pointerEvents = 'none';
       el.remove();
     });
     document.body.classList.remove('village-intro-active');
@@ -16,42 +14,51 @@
     if (!VIEWS.includes(name)) return false;
     const target = getView(name);
     if (!target) return false;
+
     cleanOverlays();
 
     document.querySelectorAll('.view-section').forEach(view => {
       view.classList.remove('active');
       view.style.display = 'none';
     });
+
     target.classList.add('active');
     target.style.display = 'flex';
 
     const back = document.getElementById('backBtn');
     const buttons = document.getElementById('headerButtons');
-    if (back) back.style.display = name === 'landing' ? 'none' : 'flex';
+    if (back) back.style.display = name === 'landing' ? 'none' : 'inline-flex';
     if (buttons) buttons.style.display = name === 'landing' ? 'none' : 'flex';
+
+    const userBtn = document.getElementById('headerAddServiceBtn');
+    const marketBtn = document.getElementById('headerMarketplaceBtn');
+    if (userBtn) userBtn.style.display = name === 'services' ? 'inline-block' : 'none';
+    if (marketBtn) marketBtn.style.display = name === 'services' ? 'inline-block' : 'none';
+
     window.scrollTo(0, 0);
 
-    // Initialise the existing page modules when available.
     try {
-      if (name === 'services' && typeof window.selectCategory === 'function') window.selectCategory('all');
-      if (name === 'marketplace' && typeof window.selectMarketCategory === 'function') window.selectMarketCategory('marketplace-all');
-      if (name === 'fasal' && typeof window.loadMandiRates === 'function') window.loadMandiRates(false);
-      if (name === 'weather') {
-        ['loadWeather','loadWeatherData','fetchWeather','updateWeather'].some(fn => {
-          if (typeof window[fn] !== 'function') return false;
-          window[fn]();
-          return true;
-        });
+      if (name === 'services') {
+        if (typeof window.selectCategory === 'function') window.selectCategory('all');
+        else if (typeof window.renderServices === 'function') window.renderServices();
       }
-    } catch (e) { console.warn('Datta City module init:', e); }
+      if (name === 'marketplace') {
+        if (typeof window.selectMarketCategory === 'function') window.selectMarketCategory('marketplace-all');
+        else if (typeof window.renderMarketplace === 'function') window.renderMarketplace();
+      }
+      if (name === 'fasal' && typeof window.loadMandiRates === 'function') window.loadMandiRates(false);
+      if (name === 'weather' && typeof window.fetchAndRenderWeather === 'function') window.fetchAndRenderWeather();
+    } catch (e) {
+      console.warn('Datta City module init:', e);
+    }
     return true;
   }
 
-  // Public API for existing code.
   window.showView = show;
   window.openDattaView = show;
 
   function viewFromCard(card) {
+    if (!card) return null;
     if (card.classList.contains('card-services')) return 'services';
     if (card.classList.contains('card-buy') || card.classList.contains('card-sell')) return 'marketplace';
     if (card.classList.contains('card-weather')) return 'weather';
@@ -59,31 +66,42 @@
     return null;
   }
 
-  function handleNavigation(event) {
-    const el = event.target && event.target.closest ? event.target.closest('.landing-card, #backBtn') : null;
-    if (!el) return;
-
+  function navigateFromElement(el, event) {
+    if (!el) return false;
     if (el.id === 'backBtn') {
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      show('landing');
-      return;
+      if (event) { event.preventDefault(); event.stopPropagation(); }
+      return show('landing');
     }
-
     const view = viewFromCard(el);
-    if (!view) return; // Kheti keeps its normal external link.
-
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    show(view);
+    if (!view) return false;
+    if (event) { event.preventDefault(); event.stopPropagation(); }
+    return show(view);
   }
 
   function install() {
     cleanOverlays();
-    // Capture phase runs before old inline handlers and legacy scripts.
-    document.addEventListener('click', handleNavigation, true);
-    document.addEventListener('pointerup', handleNavigation, true);
-    document.addEventListener('touchend', handleNavigation, true);
+
+    // Bind directly to the actual cards. This avoids conflicts with the old inline handlers.
+    document.querySelectorAll('.landing-card').forEach(card => {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', e => navigateFromElement(card, e), false);
+      card.addEventListener('pointerup', e => navigateFromElement(card, e), false);
+      card.addEventListener('touchend', e => navigateFromElement(card, e), false);
+    });
+
+    const back = document.getElementById('backBtn');
+    if (back) {
+      back.addEventListener('click', e => navigateFromElement(back, e), false);
+    }
+
+    // Capture fallback for dynamically recreated landing cards.
+    document.addEventListener('click', e => {
+      const card = e.target && e.target.closest ? e.target.closest('.landing-card') : null;
+      if (card) navigateFromElement(card, e);
+    }, true);
+
+    // Legacy intro must never block the application.
+    cleanOverlays();
     show('landing');
   }
 
