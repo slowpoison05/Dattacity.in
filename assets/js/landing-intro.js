@@ -50,18 +50,16 @@
         </div>`;
     };
 
-    // These controls are specific to our API-card renderer. The embedded live
-    // panel has its own market/crop data, so don't leave misleading controls visible.
+    // The embedded panel has its own market/crop data. Hide the old API-only
+    // search/filter row so users don't get controls that cannot affect the iframe.
     const search = document.getElementById('mandiCropSearch');
     const filter = document.getElementById('mandiFilter');
     const refresh = document.querySelector('#view-fasal button[onclick="refreshMandiRates()"]');
-    [search, filter].forEach(el => {
-      if (el) {
-        const wrapper = el.parentElement;
-        if (wrapper && !wrapper.dataset.mandiFallback) wrapper.dataset.mandiFallback = '1';
-      }
-    });
-    if (refresh) refresh.textContent = '🔄 लाइव भाव';
+    const controls = search && search.parentElement;
+    if (controls) controls.style.display = 'none';
+    if (refresh) refresh.style.display = 'none';
+    if (search) search.disabled = true;
+    if (filter) filter.disabled = true;
 
     window.loadMandiRates = renderWidget;
     window.refreshMandiRates = renderWidget;
