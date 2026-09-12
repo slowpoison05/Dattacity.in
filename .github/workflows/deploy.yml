@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Deploy website to HostEasy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
