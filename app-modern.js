@@ -1,19 +1,7 @@
 (()=>{
-  const OLD='https://raw.githubusercontent.com/slowpoison05/Dattacity.in/3f0030624e32c4646c721fdcf7ad57dc854da4e2/app-modern.js';
-  const PROFILE='https://haryanadp.gov.in/gram-panchayat/GPProfile.php?PanchayatId=29766-DATTA';
-  const s=document.createElement('script');
-  s.src=OLD;
-  s.onload=()=>{
-    const fix=()=>{
-      const b=document.getElementById('dcSarpanchHub');
-      if(!b)return false;
-      b.innerHTML='<span class="dcHubIcon">🏛</span><strong>Sarpanch Works</strong><small>Haryana • Hisar • Hansi-I • Gram Panchayat Datta. Open the verified official Panchayat profile.</small><span class="dcHubArrow">Open Official Panchayat Profile ↗</span>';
-      b.onclick=()=>window.open(PROFILE,'_blank','noopener');
-      return true;
-    };
-    if(fix())return;
-    let n=0;const t=setInterval(()=>{if(fix()||++n>100)clearInterval(t)},100);
-  };
-  s.onerror=()=>console.error('DattaCity core loader failed');
-  document.head.appendChild(s);
+const CORE='https://raw.githubusercontent.com/slowpoison05/Dattacity.in/3f0030624e32c4646c721fdcf7ad57dc854da4e2/app-modern.js';
+const PROFILE='https://haryanadp.gov.in/gram-panchayat/GPProfile.php?PanchayatId=29766-DATTA';
+function hub(){const h=document.getElementById('home');if(!h||document.getElementById('dattacity-service-hub'))return;if(!document.getElementById('dcHubStyles')){const s=document.createElement('style');s.id='dcHubStyles';s.textContent='.dcHubGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}.dcHubCard{position:relative;text-align:left;border:1px solid var(--line);background:#fff;border-radius:20px;padding:18px;min-height:190px;color:var(--ink);box-shadow:0 8px 28px rgba(16,24,40,.045)}.dcHubIcon{width:42px;height:42px;border-radius:13px;background:var(--sage);display:grid;place-items:center;font-size:20px}.dcHubCard strong{display:block;font-family:Manrope;font-size:16px;margin-top:14px}.dcHubCard small{display:block;color:var(--muted);line-height:1.45;margin-top:6px;font-size:12px}.dcHubArrow{display:block;color:var(--green);font-size:11px;font-weight:800;margin-top:14px}.dcHubLink{cursor:pointer}@media(max-width:900px){.dcHubGrid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.dcHubGrid{grid-template-columns:1fr}}';document.head.appendChild(s)}const x=document.createElement('section');x.id='dattacity-service-hub';x.className='section';x.innerHTML='<div class="sectionHead"><div><div class="kicker">DATTACITY SERVICES</div><h2>Your village services</h2><p class="sectionLead">The important DattaCity services, together in one place.</p></div></div><div class="dcHubGrid"><button class="dcHubCard" id="dcMyServices" type="button"><span class="dcHubIcon">◉</span><strong>My Services</strong><small>Browse all local services from the existing Firebase directory.</small><span class="dcHubArrow">Open Services →</span></button><button class="dcHubCard dcHubLink" id="dcSarpanchHub" type="button"><span class="dcHubIcon">🏛</span><strong>Sarpanch Works</strong><small>Haryana • Hisar • Hansi-I • Gram Panchayat Datta. Official Panchayat profile and works.</small><span class="dcHubArrow">Open Official Profile ↗</span></button><button class="dcHubCard" type="button"><span class="dcHubIcon">⚠</span><strong>Complaint Portal</strong><small>Raise and follow community complaints and local issues.</small><span class="dcHubArrow">Complaint Portal</span></button><button class="dcHubCard dcHubLink" id="dcKhetiHub" type="button"><span class="dcHubIcon">🌿</span><strong>Kheti Health Centre</strong><small>Farmer-focused health and agriculture support.</small><span class="dcHubArrow">Open Kheti Health Centre ↗</span></button><button class="dcHubCard" type="button"><span class="dcHubIcon">🏃</span><strong>Sports</strong><small>Village sports, matches, activities and player updates.</small><span class="dcHubArrow">Sports</span></button></div>';h.appendChild(x);document.getElementById('dcMyServices').onclick=()=>document.querySelector('[data-go="services"]')?.click();document.getElementById('dcSarpanchHub').onclick=()=>window.open(PROFILE,'_blank','noopener');document.getElementById('dcKhetiHub').onclick=()=>location.href='https://kheti.dattacity.in'}
+function load(){const s=document.createElement('script');s.src=CORE;s.onload=()=>{hub();setTimeout(hub,500)};s.onerror=()=>hub();document.head.appendChild(s)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',load,{once:true});else load();
 })();
