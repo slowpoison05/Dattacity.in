@@ -5,6 +5,10 @@
     return document.getElementById(`view-${name}`);
   }
 
+  function removeBlockingOverlays() {
+    document.querySelectorAll('#villageIntroOverlay, .village-intro-overlay').forEach(el => el.remove());
+  }
+
   function setActiveView(name) {
     const target = getView(name);
     if (!target) return false;
@@ -19,77 +23,69 @@
     const headerButtons = document.getElementById('headerButtons');
     if (back) back.style.display = name === 'landing' ? 'none' : 'flex';
     if (headerButtons) headerButtons.style.display = name === 'landing' ? 'none' : 'flex';
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
     return true;
   }
 
-  const navigate = function(name) {
-    if (!VIEW_IDS.includes(name) || !setActiveView(name)) return false;
+  function navigate(name) {
+    if (!VIEW_IDS.includes(name)) return false;
+    removeBlockingOverlays();
+    if (!setActiveView(name)) return false;
 
-    if (name === 'services' && typeof window.selectCategory === 'function') {
-      try { window.selectCategory('all'); } catch (_) {}
-    }
-    if (name === 'marketplace' && typeof window.selectMarketCategory === 'function') {
-      try { window.selectMarketCategory('marketplace-all'); } catch (_) {}
-    }
-    if (name === 'weather') {
-      ['loadWeather', 'loadWeatherData', 'fetchWeather', 'updateWeather'].some(fn => {
-        if (typeof window[fn] !== 'function') return false;
-        try { window[fn](); } catch (_) {}
-        return true;
-      });
-    }
-    if (name === 'fasal' && typeof window.loadMandiRates === 'function') {
-      try { window.loadMandiRates(false); } catch (_) {}
-    }
+    try {
+      if (name === 'services' && typeof window.selectCategory === 'function') window.selectCategory('all');
+      if (name === 'marketplace' && typeof window.selectMarketCategory === 'function') window.selectMarketCategory('marketplace-all');
+      if (name === 'fasal' && typeof window.loadMandiRates === 'function') window.loadMandiRates(false);
+      if (name === 'weather') {
+        ['loadWeather', 'loadWeatherData', 'fetchWeather', 'updateWeather'].some(fn => {
+          if (typeof window[fn] !== 'function') return false;
+          window[fn]();
+          return true;
+        });
+      }
+    } catch (_) {}
     return true;
-  };
+  }
 
-  // Keep the public function for legacy inline handlers.
   window.showView = navigate;
 
-  function removeOldIntro() {
-    const overlay = document.getElementById('villageIntroOverlay');
-    if (overlay) overlay.remove();
-  }
+  function installNavigation() {
+    removeBlockingOverlays();
 
-  function installClickNavigation() {
-    // Capture clicks before legacy inline onclick handlers. This makes the
-    // new navigation reliable even if old scripts redefine showView later.
+    // Directly handle the landing cards. This avoids all legacy inline
+    // onclick/showView code and works on both touch and desktop clicks.
     document.addEventListener('click', event => {
-      const target = event.target.closest('[onclick*="showView"]');
-      if (!target) return;
+      const card = event.target.closest('.landing-card');
+      if (card) {
+        let view = null;
+        if (card.classList.contains('card-services')) view = 'services';
+        else if (card.classList.contains('card-buy') || card.classList.contains('card-sell')) view = 'marketplace';
+        else if (card.classList.contains('card-weather')) view = 'weather';
+        else if (card.classList.contains('card-fasal')) view = 'fasal';
+        else if (card.classList.contains('card-kheti')) return; // keep external Kheti link
+        if (view) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          navigate(view);
+          return;
+        }
+      }
 
-      const match = target.getAttribute('onclick').match(/showView\(['\"](landing|services|marketplace|weather|fasal)['\"]\)/);
-      if (!match) return;
-
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      navigate(match[1]);
+      const back = event.target.closest('#backBtn');
+      if (back) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        navigate('landing');
+      }
     }, true);
-  }
-
-  function ensureNavigationWorks() {
-    removeOldIntro();
-    window.showView = navigate;
 
     const landing = getView('landing');
-    if (landing && !document.querySelector('.view-section.active')) {
-      setActiveView('landing');
-    }
-
-    const overlays = document.querySelectorAll('#sidebarOverlay');
-    overlays.forEach((el, i) => {
-      if (i > 0) el.id = `sidebarOverlay${i + 1}`;
-    });
-
-    installClickNavigation();
+    if (landing) setActiveView('landing');
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ensureNavigationWorks, { once: true });
+    document.addEventListener('DOMContentLoaded', installNavigation, { once: true });
   } else {
-    ensureNavigationWorks();
+    installNavigation();
   }
 })();
