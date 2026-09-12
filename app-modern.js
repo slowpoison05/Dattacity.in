@@ -1,115 +1,16 @@
 (()=>{
   const CORE='https://raw.githubusercontent.com/slowpoison05/Dattacity.in/d2259a62c81e7fa9da3052e4007aeaa460210e37/app-modern.js';
-  const FIREBASE_VERSION='9.23.0';
-  const FIREBASE_SDKS=[
-    `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-app-compat.js`,
-    `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-auth-compat.js`,
-    `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-database-compat.js`,
-    `https://www.gstatic.com/firebasejs/${FIREBASE_VERSION}/firebase-storage-compat.js`
-  ];
-  const esc=v=>String(v??'').replace(/[&<>\"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[m]));
+  const V='9.23.0';
+  const SDK=[`https://www.gstatic.com/firebasejs/${V}/firebase-app-compat.js`,`https://www.gstatic.com/firebasejs/${V}/firebase-auth-compat.js`,`https://www.gstatic.com/firebasejs/${V}/firebase-database-compat.js`,`https://www.gstatic.com/firebasejs/${V}/firebase-storage-compat.js`];
+  const CFG={apiKey:'AIzaSyCvaXtUjp8xY5nRFXroL-H1ospFSgM7qQ0',authDomain:'superkisan-33b7e.firebaseapp.com',databaseURL:'https://superkisan-33b7e-default-rtdb.firebaseio.com',projectId:'superkisan-33b7e',storageBucket:'superkisan-33b7e.firebasestorage.app',messagingSenderId:'744234922644',appId:'1:744234922644:web:20b4c062d50d6265fdba81'};
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const first=(v,...ks)=>ks.map(k=>v?.[k]).find(x=>x!=null&&String(x).trim()!=='');
   const photos=v=>Array.isArray(v?.photos)?v.photos.filter(Boolean):(v?.photoURL||v?.image||v?.imageUrl||v?.photo||v?.profilePhoto?[v.photoURL||v.image||v.imageUrl||v.photo||v.profilePhoto]:[]);
-  const first=(v,...keys)=>keys.map(k=>v?.[k]).find(x=>x!==undefined&&x!==null&&String(x).trim()!=='');
-
-  function setStatus(text){
-    const status=document.getElementById('dbStatus');
-    if(status) status.textContent=text;
-  }
-
-  function loadScript(src){
-    return new Promise((resolve,reject)=>{
-      const existing=[...document.scripts].find(s=>s.src===src);
-      if(existing){existing.addEventListener('load',resolve,{once:true});existing.addEventListener('error',reject,{once:true});if(existing.dataset.loaded==='1')resolve();return;}
-      const s=document.createElement('script');
-      s.src=src;s.async=false;
-      s.onload=()=>{s.dataset.loaded='1';resolve();};
-      s.onerror=()=>reject(new Error('Failed to load '+src));
-      document.head.appendChild(s);
-    });
-  }
-
-  async function ensureFirebase(){
-    if(!window.firebase || typeof window.firebase.initializeApp!=='function'){
-      for(const src of FIREBASE_SDKS) await loadScript(src);
-    }
-    if(!window.firebase) throw new Error('Firebase SDK did not load');
-    return window.firebase;
-  }
-
-  function injectServices(){
-    if(document.getElementById('dattacity-existing-services')) return;
-    const page=document.querySelector('main.page');
-    if(!page) return;
-    const home=document.getElementById('home');
-    if(!home) return;
-    const section=document.createElement('section');
-    section.id='dattacity-existing-services';
-    section.className='section';
-    section.innerHTML=`<div class="sectionHead"><div><div class="kicker">EXISTING DATTACITY SERVICES</div><h2>Local services, kept intact.</h2><p class="sectionLead">Your existing Firebase service listings appear here. Nothing is replaced.</p></div></div><div id="servicesList" class="cards" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px"></div>`;
-    home.appendChild(section);
-    const kh=document.createElement('section');
-    kh.className='section';
-    kh.innerHTML=`<div class="cta" style="margin-top:0"><div><div class="kicker" style="color:#ead6a5">FARMER SUPPORT</div><h2>Kheti Health Centre</h2><p>Open the existing farmer-focused health centre.</p></div><button type="button" id="khetiHealthBtn">Open Kheti Health Centre ↗</button></div>`;
-    home.appendChild(kh);
-    document.getElementById('khetiHealthBtn').addEventListener('click',()=>window.location.href='https://kheti.dattacity.in');
-    const style=document.createElement('style');
-    style.textContent=`#dattacity-existing-services .service-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 10px 30px rgba(22,40,31,.05)}#dattacity-existing-services .service-card .service-row{display:flex;gap:14px;align-items:flex-start}#dattacity-existing-services .service-card .service-photo{width:72px;height:72px;border-radius:16px;object-fit:cover;background:#eef2ed;flex:none}#dattacity-existing-services .service-card h3{font-family:Manrope;margin:0 0 5px;font-size:18px}#dattacity-existing-services .service-card p{margin:4px 0;color:var(--muted);font-size:12px;line-height:1.5}#dattacity-existing-services .service-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}#dattacity-existing-services .service-actions a{display:inline-block;text-decoration:none;border-radius:999px;padding:8px 12px;font-size:12px;font-weight:700;background:var(--green);color:#fff}@media(max-width:700px){#dattacity-existing-services .cards{grid-template-columns:1fr!important}#dattacity-existing-services .service-card{padding:15px}}`;
-    document.head.appendChild(style);
-  }
-
-  function renderServices(rows){
-    const list=document.getElementById('servicesList');
-    if(!list) return;
-    if(!rows.length){list.innerHTML='<div class="notice">No services found in the existing Firebase services collection.</div>';return;}
-    list.innerHTML=rows.map(item=>{
-      const name=first(item,'name','title','serviceName')||'Local service';
-      const category=first(item,'category','type','serviceType')||'Service';
-      const description=first(item,'description','about','details')||'';
-      const phone=first(item,'phone','phoneNumber','mobile','contact','contactNumber');
-      const p=photos(item)[0];
-      return `<article class="service-card"><div class="service-row">${p?`<img class="service-photo" src="${esc(p)}" alt="" loading="lazy">`:'<div class="service-photo">◉</div>'}<div style="min-width:0;flex:1"><h3>${esc(name)}</h3><p><strong>${esc(category)}</strong></p>${description?`<p>${esc(description)}</p>`:''}${phone?`<div class="service-actions"><a href="tel:${esc(phone)}">Call ${esc(phone)}</a></div>`:''}</div></div></article>`;
-    }).join('');
-  }
-
-  function installServiceNavigation(){
-    document.addEventListener('click',e=>{
-      const b=e.target.closest('[data-go="services"]');
-      if(!b) return;
-      const target=document.getElementById('dattacity-existing-services');
-      if(!target) return;
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      target.scrollIntoView({behavior:'smooth',block:'start'});
-    },true);
-  }
-
-  async function start(){
-    setStatus('Connecting…');
-    try{
-      await ensureFirebase();
-      if(window.firebase&&typeof window.firebase.storage!=='function') window.firebase.storage=()=>null;
-      const code=await fetch(CORE,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Core load failed');return r.text()});
-      (0,eval)(code);
-      if(document.readyState!=='loading') document.dispatchEvent(new Event('DOMContentLoaded'));
-      injectServices();
-      installServiceNavigation();
-      const db=window.firebase?.database?.();
-      if(!db){setStatus('Firebase unavailable');console.warn('DattaCity Firebase database is unavailable');return;}
-      db.ref('services').on('value',snap=>{
-        const rows=[];
-        snap.forEach(c=>{const v=c.val();if(v&&typeof v==='object')rows.push(v)});
-        renderServices(rows);
-        const count=document.getElementById('serviceCount');
-        if(count) count.textContent=rows.length;
-        setStatus('Connected');
-      },err=>{
-        console.error('Firebase services read failed',err);
-        setStatus('Firebase error');
-      });
-    }catch(e){
-      console.error('DattaCity startup/Firebase compatibility',e);
-      setStatus('Firebase error');
-    }
-  }
+  function status(t){const e=document.getElementById('dbStatus');if(e)e.textContent=t}
+  function load(src){return new Promise((ok,bad)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>bad(Error('Firebase SDK failed: '+src));document.head.appendChild(s)})}
+  async function firebaseReady(){if(!window.firebase?.initializeApp)for(const s of SDK)await load(s);if(!window.firebase)throw Error('Firebase SDK unavailable');if(!firebase.apps.length)firebase.initializeApp(CFG);return firebase}
+  function inject(){if(document.getElementById('dattacity-existing-services'))return;const home=document.getElementById('home');if(!home)return;const sec=document.createElement('section');sec.id='dattacity-existing-services';sec.className='section';sec.innerHTML='<div class="sectionHead"><div><div class="kicker">EXISTING DATTACITY SERVICES</div><h2>Local services, kept intact.</h2><p class="sectionLead">Connected to the existing Firebase database.</p></div></div><div id="dcServicesList" class="cards"></div>';home.appendChild(sec);const kh=document.createElement('section');kh.className='section';kh.innerHTML='<div class="cta" style="margin-top:0"><div><div class="kicker" style="color:#ead6a5">FARMER SUPPORT</div><h2>Kheti Health Centre</h2><p>Open the existing farmer-focused health centre.</p></div><button type="button" id="khetiHealthBtn">Open Kheti Health Centre ↗</button></div>';home.appendChild(kh);document.getElementById('khetiHealthBtn').onclick=()=>location.href='https://kheti.dattacity.in'}
+  function render(rows){const list=document.getElementById('servicesList')||document.getElementById('dcServicesList');if(!list)return;if(!rows.length){list.innerHTML='<div class="notice">No services found.</div>';return}list.innerHTML=rows.map(x=>{const n=first(x,'name','title','serviceName')||'Local service',c=first(x,'category','type','serviceType')||'Service',d=first(x,'details','description','about')||'',p=first(x,'phone','mobile','contact','phoneNumber'),im=photos(x)[0];return `<article class="card"><div class="row">${im?`<img class="thumb" src="${esc(im)}" alt="">`:'<div class="thumb">◉</div>'}<div class="info"><h3>${esc(n)}</h3><div class="muted">${esc(d)}</div><span class="tag">${esc(c)}</span>${p?`<div class="actions"><a class="call" href="tel:${esc(p)}">Call</a></div>`:''}</div></div></article>`}).join('')}
+  async function start(){status('Connecting…');try{const f=await firebaseReady();const db=f.database();inject();db.ref('services').on('value',s=>{const rows=[];s.forEach(c=>{const v=c.val();if(v&&typeof v==='object')rows.push(v)});render(rows);const count=document.getElementById('serviceCount');if(count)count.textContent=rows.length;status('Connected')},e=>{console.error(e);status('Firebase error')});let code=await fetch(CORE,{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Core load failed');return r.text()});code=code.replace('storage=firebase.storage();','storage=(()=>{try{return firebase.storage()}catch(e){console.warn(e);return null}})();');(0,eval)(code);if(document.readyState!=='loading')document.dispatchEvent(new Event('DOMContentLoaded'));}catch(e){console.error(e);status('Firebase error')}}
   start();
 })();
