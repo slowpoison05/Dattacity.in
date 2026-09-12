@@ -14,18 +14,47 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Inject DattaCity visual theme
+      - name: Prepare DattaCity runtime
         shell: bash
+        env:
+          DATA_GOV_API_KEY: ${{ secrets.DATA_GOV_API_KEY }}
         run: |
           python3 - <<'PY'
           from pathlib import Path
           path = Path("index.html")
           text = path.read_text(encoding="utf-8")
-          marker = '<link rel="stylesheet" href="theme.css">'
+
+          # Keep the premium theme enabled.
+          theme = '<link rel="stylesheet" href="theme.css">'
+          if theme not in text:
+              text = text.replace('</head>', f'  {theme}\n</head>', 1)
+
+          # The intro layer was previously able to block the actual landing page.
+          # Load a fail-safe controller after the page markup exists.
+          landing_script = '<script src="assets/js/landing-intro.js"></script>'
+          if landing_script not in text:
+              text = text.replace('</body>', f'  {landing_script}\n</body>', 1)
+
+          # Inject the government API key only when the repository secret exists.
+          # The key is public/client-side by nature, but keeping it out of git prevents accidental commits.
+          marker = '<script>window.DATTA_MANDI_API_KEY='
           if marker not in text:
-              text = text.replace('</head>', f'  {marker}\n</head>', 1)
-              path.write_text(text, encoding="utf-8")
+              key = __import__('os').environ.get('DATA_GOV_API_KEY', '')
+              safe = key.replace('\\', '\\\\').replace("'", "\\'")
+              injection = f"<script>window.DATTA_MANDI_API_KEY='{safe}';</script>"
+              text = text.replace('</head>', f'  {injection}\n</head>', 1)
+
+          path.write_text(text, encoding='utf-8')
           PY
+
+      - name: Validate required DattaCity assets
+        shell: bash
+        run: |
+          test -f index.html
+          test -f theme.css
+          test -f assets/css/landing-intro.css
+          test -f assets/js/landing-intro.js
+          test -f assets/js/mandiService.js
 
       - name: Deploy website to HostEasy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
