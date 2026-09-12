@@ -24,8 +24,6 @@
     return true;
   }
 
-  // Central navigation controller. It deliberately runs again on DOM ready so
-  // legacy inline scripts cannot overwrite the working navigation after load.
   const navigate = function(name) {
     if (!VIEW_IDS.includes(name) || !setActiveView(name)) return false;
 
@@ -48,6 +46,7 @@
     return true;
   };
 
+  // Keep the public function for legacy inline handlers.
   window.showView = navigate;
 
   function removeOldIntro() {
@@ -55,9 +54,24 @@
     if (overlay) overlay.remove();
   }
 
+  function installClickNavigation() {
+    // Capture clicks before legacy inline onclick handlers. This makes the
+    // new navigation reliable even if old scripts redefine showView later.
+    document.addEventListener('click', event => {
+      const target = event.target.closest('[onclick*="showView"]');
+      if (!target) return;
+
+      const match = target.getAttribute('onclick').match(/showView\(['\"](landing|services|marketplace|weather|fasal)['\"]\)/);
+      if (!match) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      navigate(match[1]);
+    }, true);
+  }
+
   function ensureNavigationWorks() {
     removeOldIntro();
-    // Reinstall after every legacy inline script has executed.
     window.showView = navigate;
 
     const landing = getView('landing');
@@ -65,11 +79,12 @@
       setActiveView('landing');
     }
 
-    // The legacy markup accidentally contains two identical overlay IDs.
     const overlays = document.querySelectorAll('#sidebarOverlay');
     overlays.forEach((el, i) => {
       if (i > 0) el.id = `sidebarOverlay${i + 1}`;
     });
+
+    installClickNavigation();
   }
 
   if (document.readyState === 'loading') {
