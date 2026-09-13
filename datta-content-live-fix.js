@@ -1,7 +1,6 @@
 (()=>{
 'use strict';
 /* Public renderer: use the exact same card map as the Content Manager. */
-const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]||c));
 let latest=null;
 const fallbackSections=[
  {id:'hero',target:'.hero',titleSel:'h1',bodySel:'p',eyebrowSel:'.eyebrow',image:'background'},
@@ -9,8 +8,8 @@ const fallbackSections=[
  {id:'home1',target:'.cards3 .lifeCard:nth-child(1)',titleSel:'.lifeInner h3',bodySel:'.lifeInner p',image:'background'},
  {id:'home2',target:'.cards3 .lifeCard:nth-child(2)',titleSel:'.lifeInner h3',bodySel:'.lifeInner p',image:'background'},
  {id:'home3',target:'.cards3 .lifeCard:nth-child(3)',titleSel:'.lifeInner h3',bodySel:'.lifeInner p',image:'background'},
- {id:'updates1',target:'.updates .updateCard:nth-child(1)',titleSel:'h3',bodySel:'.dcContentBody',image:null},
- {id:'updates2',target:'.updates .updateCard:nth-child(2)',titleSel:'h3',bodySel:'.dcContentBody',image:null},
+ {id:'updates1',target:'.updates > .updateCard:nth-child(1)',titleSel:'h3',bodySel:'.dcContentBody',image:null},
+ {id:'updates2',target:'.updates > .storyCard:nth-child(2)',titleSel:'h3',bodySel:'p',image:null},
  {id:'story1',target:'.storyGrid .storyCard:nth-child(1)',titleSel:'.storyBody h3',bodySel:'.storyBody p',imageSel:'.storyImg',image:'background'},
  {id:'story2',target:'.storyGrid .storyCard:nth-child(2)',titleSel:'.storyBody h3',bodySel:'.storyBody p',imageSel:'.storyImg',image:'background'},
  {id:'story3',target:'.storyGrid .storyCard:nth-child(3)',titleSel:'.storyBody h3',bodySel:'.storyBody p',imageSel:'.storyImg',image:'background'},
@@ -20,7 +19,7 @@ function sections(){return Array.isArray(window.DATTA_CONTENT_SECTIONS)&&window.
 function dataFor(id){
  if(latest?.[id])return latest[id];
  /* Keep the old Community Updates record working after the card split. */
- if((id==='updates1')&&latest?.updates)return latest.updates;
+ if(id==='updates1'&&latest?.updates)return latest.updates;
  return null;
 }
 function renderOne(sec){
