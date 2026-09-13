@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Datta — Meri Panchayat Activities</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f6f8f5;color:#17231b;padding:16px}.wrap{max-width:1400px;margin:auto}.head{background:#fff;border:1px solid #e1e8e1;border-radius:18px;padding:18px;margin-bottom:14px}.head h1{margin:4px 0 6px;font-size:22px}.meta{color:#647067;font-size:13px}.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.tab{border:1px solid #d7e1d8;background:#fff;border-radius:10px;padding:9px 13px;font-weight:800;cursor:pointer}.tab.active{background:#1f5d36;color:#fff;border-color:#1f5d36}.search{width:100%;padding:12px 14px;border:1px solid #d7e1d8;border-radius:12px;background:#fff;font-size:14px}.count{font-size:12px;color:#647067;margin:9px 2px}.tableWrap{overflow:auto;background:#fff;border:1px solid #e1e8e1;border-radius:14px}.table{border-collapse:collapse;width:100%;min-width:1000px;font-size:12px}.table th,.table td{padding:9px 10px;border-bottom:1px solid #edf1ed;text-align:left;vertical-align:top}.table th{background:#f0f4ef;position:sticky;top:0;z-index:1;white-space:nowrap}.amt,.status{white-space:nowrap;font-weight:700}.source{font-size:11px;color:#6c776f;margin-top:10px}.error{background:#fff4f4;border:1px solid #efcaca;padding:14px;border-radius:12px;color:#8b2020}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="head"><div class="meta">GRAM PANCHAYAT DATTA • GP/LGD 29766</div><h1>🇮🇳 Meri Panchayat — Proposed Activities</h1><div class="meta"><b>BP:</b> Hansi-I [1070] &nbsp; <b>ZP:</b> Hisar [63] &nbsp; <b>State:</b> Haryana</div></div>
+<div id="app">Loading activities…</div>
+</div>
+<script src="./datta-meri-panchayat-data.js"></script>
+<script>
+(function(){
+  const root=document.getElementById('app');
+  try{
+    const D=window.DATTA_MERI_DATA;
+    if(!D) throw new Error('Activity data was not loaded');
+    const years=Object.keys(D).sort((a,b)=>Number(b)-Number(a));
+    let year=years[0];
+    root.innerHTML='<div class="tabs" id="tabs"></div><input class="search" id="search" placeholder="Search activity, scheme or focused area…"><div class="count" id="count"></div><div class="tableWrap"><table class="table"><thead><tr><th>#</th><th>Activity Name</th><th>Scheme</th><th>Registered on</th><th>Sanctioned Date</th><th>Expected Amount</th><th>Current Status</th><th>Focused Area</th></tr></thead><tbody id="body"></tbody></table></div><div class="source">Source: Meri Panchayat — Ministry of Panchayati Raj / NIC. Records are displayed as supplied for Datta GP [29766]. “Expected Amount” is the portal field, not actual expenditure.</div>';
+    const tabs=document.getElementById('tabs');
+    years.forEach(y=>{const b=document.createElement('button');b.className='tab';b.textContent=y+' ('+(D[y]||[]).length+')';b.onclick=function(){year=y;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');draw()};tabs.appendChild(b)});
+    tabs.firstChild.classList.add('active');
+    const search=document.getElementById('search');
+    function esc(x){return String(x??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]||c))}
+    function draw(){const q=search.value.trim().toLowerCase();const rows=(D[year]||[]).filter(r=>r.join(' ').toLowerCase().includes(q));document.getElementById('count').textContent=rows.length+' of '+(D[year]||[]).length+' activities shown — '+year;document.getElementById('body').innerHTML=rows.map((r,i)=>'<tr><td>'+(i+1)+'</td><td>'+esc(r[0])+'</td><td>'+esc(r[1])+'</td><td>'+esc(r[2])+'</td><td>'+esc(r[3])+'</td><td class="amt">'+esc(r[4])+'</td><td class="status">'+esc(r[5])+'</td><td>'+esc(r[6])+'</td></tr>').join('')}
+    search.oninput=draw;draw();
+  }catch(e){root.innerHTML='<div class="error"><b>Could not load the Meri Panchayat activity records.</b><br>'+String(e.message)+'</div>';console.error(e)}
+})();
+</script>
+</body>
+</html>
