@@ -1,48 +1,41 @@
 (()=>{
 'use strict';
-/* Public renderer: use the exact same card map as the Content Manager. */
-let latest=null;
-const fallbackSections=[
- {id:'hero',target:'.hero',titleSel:'h1',bodySel:'p',eyebrowSel:'.eyebrow',image:'background'},
- {id:'village',target:'.feature',titleSel:'.featureCopy h3',bodySel:'.featureCopy p',imageSel:'.featurePhoto',image:'background'},
- {id:'home1',target:'.cards3 .lifeCard:nth-child(1)',titleSel:'.lifeInner h3',bodySel:'.lifeInner p',image:'background'},
- {id:'home2',target:'.cards3 .lifeCard:nth-child(2)',titleSel:'.lifeInner h3',bodySel:'.lifeInner p',image:'background'},
- {id:'home3',target:'.cards3 .lifeCard:nth-child(3)',titleSel:'.lifeInner h3',bodySel:'.lifeInner p',image:'background'},
- {id:'updates1',target:'.updates > .updateCard:nth-child(1)',titleSel:'h3',bodySel:'.dcContentBody',image:null},
- {id:'updates2',target:'.updates > .storyCard:nth-child(2)',titleSel:'h3',bodySel:'p',image:null},
- {id:'story1',target:'.storyGrid .storyCard:nth-child(1)',titleSel:'.storyBody h3',bodySel:'.storyBody p',imageSel:'.storyImg',image:'background'},
- {id:'story2',target:'.storyGrid .storyCard:nth-child(2)',titleSel:'.storyBody h3',bodySel:'.storyBody p',imageSel:'.storyImg',image:'background'},
- {id:'story3',target:'.storyGrid .storyCard:nth-child(3)',titleSel:'.storyBody h3',bodySel:'.storyBody p',imageSel:'.storyImg',image:'background'},
- {id:'dream',target:'.cta',titleSel:'h2',bodySel:'p',image:'background'}
+/* Stable public content renderer. It does not depend on Firebase SDK load order. */
+const DB='https://superkisan-33b7e-default-rtdb.firebaseio.com';
+const MAP=[
+ {id:'hero',target:'.hero',title:'h1',body:'p',eyebrow:'.eyebrow',image:'background'},
+ {id:'village',target:'.feature',title:'.featureCopy h3',body:'.featureCopy p',image:'.featurePhoto'},
+ {id:'home1',target:'.cards3 .lifeCard:nth-child(1)',title:'.lifeInner h3',body:'.lifeInner p',image:'background'},
+ {id:'home2',target:'.cards3 .lifeCard:nth-child(2)',title:'.lifeInner h3',body:'.lifeInner p',image:'background'},
+ {id:'home3',target:'.cards3 .lifeCard:nth-child(3)',title:'.lifeInner h3',body:'.lifeInner p',image:'background'},
+ {id:'updates1',target:'.updates > .updateCard',title:'h3',body:'.dcContentBody'},
+ {id:'updates2',target:'.updates > .storyCard',title:'h3',body:'p'},
+ {id:'story1',target:'.storyGrid .storyCard:nth-child(1)',title:'.storyBody h3',body:'.storyBody p',image:'.storyImg'},
+ {id:'story2',target:'.storyGrid .storyCard:nth-child(2)',title:'.storyBody h3',body:'.storyBody p',image:'.storyImg'},
+ {id:'story3',target:'.storyGrid .storyCard:nth-child(3)',title:'.storyBody h3',body:'.storyBody p',image:'.storyImg'},
+ {id:'dream',target:'.cta',title:'h2',body:'p',image:'background'}
 ];
-function sections(){return Array.isArray(window.DATTA_CONTENT_SECTIONS)&&window.DATTA_CONTENT_SECTIONS.length?window.DATTA_CONTENT_SECTIONS:fallbackSections}
-function dataFor(id){
- if(latest?.[id])return latest[id];
- /* Keep the old Community Updates record working after the card split. */
- if(id==='updates1'&&latest?.updates)return latest.updates;
- return null;
-}
-function renderOne(sec){
- const d=dataFor(sec.id),root=document.querySelector(sec.target);if(!root||!d)return false;
+let data={};
+function getMap(){return Array.isArray(window.DATTA_CONTENT_SECTIONS)&&window.DATTA_CONTENT_SECTIONS.length?window.DATTA_CONTENT_SECTIONS.map(s=>({id:s.id,target:s.target,title:s.titleSel,body:s.bodySel,eyebrow:s.eyebrowSel,image:s.imageSel||s.image})):MAP}
+function one(sec){
+ const d=data[sec.id]||(sec.id==='updates1'?data.updates:null);const root=document.querySelector(sec.target);if(!root||!d)return;
  root.dataset.dcContentId=sec.id;
- if(d.eyebrow!==undefined&&sec.eyebrowSel){const el=root.querySelector(sec.eyebrowSel);if(el)el.textContent=d.eyebrow}
- if(d.title!==undefined&&sec.titleSel){let el=root.querySelector(sec.titleSel);if(!el&&sec.id.startsWith('updates')){el=document.createElement('h3');root.insertBefore(el,root.firstChild)}if(el)el.textContent=d.title}
- if(d.body!==undefined&&sec.bodySel){
-  let el=root.querySelector(sec.bodySel);
-  if(sec.id.startsWith('updates')){
-   if(!el){el=document.createElement('p');el.className='dcContentBody';el.style.cssText='margin:8px 0 0;color:#69736d;font-size:12px;line-height:1.55';root.appendChild(el)}
-   el.textContent=d.body;
-  }else if(el)el.textContent=d.body;
- }
- if(d.image&&sec.image==='background'){const el=sec.imageSel?root.querySelector(sec.imageSel):root;if(el)el.style.backgroundImage=`url("${String(d.image).replace(/"/g,'&quot;')}")`}
- return true;
+ if(d.eyebrow!==undefined&&sec.eyebrow){let e=root.querySelector(sec.eyebrow);if(e)e.textContent=d.eyebrow}
+ if(d.title!==undefined&&sec.title){let e=root.querySelector(sec.title);if(!e&&sec.id==='updates1'){e=document.createElement('h3');e.style.cssText='font-family:Manrope;margin:0 0 7px;font-size:18px';root.insertBefore(e,root.firstChild)}if(e)e.textContent=d.title}
+ if(d.body!==undefined&&sec.body){let e=root.querySelector(sec.body);if(!e&&sec.id==='updates1'){e=document.createElement('p');e.className='dcContentBody';e.style.cssText='margin:8px 0 0;color:#69736d;font-size:12px;line-height:1.55';root.appendChild(e)}if(e)e.textContent=d.body}
+ if(d.image&&sec.image){const e=sec.image==='background'?root:root.querySelector(sec.image);if(e)e.style.backgroundImage=`url("${String(d.image).replace(/"/g,'&quot;')}")`}
 }
-function render(){sections().forEach(renderOne)}
-function start(){
- if(!window.firebase?.database){setTimeout(start,300);return}
- window.firebase.database().ref('siteContent').on('value',s=>{latest=s.val()||{};render()});
- const observer=new MutationObserver(render);observer.observe(document.documentElement,{childList:true,subtree:true});
- let n=0;const timer=setInterval(()=>{render();if(++n>150)clearInterval(timer)},100);
+function render(){getMap().forEach(one)}
+async function fetchContent(){
+ try{const r=await fetch(DB+'/siteContent.json?dc='+Date.now(),{cache:'no-store'});if(!r.ok)throw new Error('HTTP '+r.status);const v=await r.json();if(v&&typeof v==='object'){data=v;render()}}
+ catch(e){console.warn('DattaCity content REST read failed',e)}
 }
-start();
+function boot(){
+ fetchContent();
+ setTimeout(fetchContent,800);
+ setTimeout(fetchContent,2500);
+ setInterval(fetchContent,5000);
+ const o=new MutationObserver(render);o.observe(document.documentElement,{childList:true,subtree:true});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
