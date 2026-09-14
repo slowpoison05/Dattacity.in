@@ -1,0 +1,45 @@
+name: Deploy to HostEasy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Prepare live complaint portal
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app-modern.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="assets/js/complaint-portal-live.js?v=20260914-1"></script>'
+          if tag not in s:
+              s = s.replace('</body>', tag + '</body>', 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Validate live files
+        shell: bash
+        run: |
+          test -f index.html
+          test -f app-modern.html
+          test -f assets/js/complaint-portal-live.js
+
+      - name: Deploy website to HostEasy via SFTP
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          port: ${{ secrets.FTP_PORT || '22' }}
+          local_path: './*'
+          remote_path: './'
+          sftp_only: true
+          sftpArgs: '-o ConnectTimeout=15'
