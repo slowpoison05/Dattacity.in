@@ -2,44 +2,71 @@ name: Deploy to HostEasy
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Prepare live complaint portal
+      - name: Prepare DattaCity runtime
         shell: bash
+        env:
+          DATA_GOV_API_KEY: ${{ secrets.DATA_GOV_API_KEY }}
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('app-modern.html')
-          s = p.read_text(encoding='utf-8')
-          tag = '<script src="assets/js/complaint-portal-live.js?v=20260914-1"></script>'
-          if tag not in s:
-              s = s.replace('</body>', tag + '</body>', 1)
-              p.write_text(s, encoding='utf-8')
+          path = Path("index.html")
+          text = path.read_text(encoding="utf-8")
+
+          theme = '<link rel="stylesheet" href="theme.css">'
+          if theme not in text:
+              text = text.replace('</head>', f'  {theme}\n</head>', 1)
+
+          landing_script = '<script src="assets/js/landing-intro.js"></script>'
+          if landing_script not in text:
+              text = text.replace('</body>', f'  {landing_script}\n</body>', 1)
+
+          marker = '<script>window.DATTA_MANDI_API_KEY='
+          if marker not in text:
+              key = __import__('os').environ.get('DATA_GOV_API_KEY', '')
+              safe = key.replace('\\', '\\\\').replace("'", "\\'")
+              injection = f"<script>window.DATTA_MANDI_API_KEY='{safe}';</script>"
+              text = text.replace('</head>', f'  {injection}\n</head>', 1)
+
+          fallback = '<script src="assets/js/mandi-widget-fallback.js"></script>'
+          if fallback not in text:
+              text = text.replace('</body>', f'  {fallback}\n</body>', 1)
+
+          path.write_text(text, encoding='utf-8')
           PY
 
-      - name: Validate live files
+      - name: Validate required DattaCity assets
         shell: bash
         run: |
           test -f index.html
-          test -f app-modern.html
-          test -f assets/js/complaint-portal-live.js
+          test -f theme.css
+          test -f assets/css/landing-intro.css
+          test -f assets/js/landing-intro.js
+          test -f assets/js/mandiService.js
+          test -f assets/js/mandi-widget-fallback.js
 
-      - name: Deploy website to HostEasy via SFTP
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.6
+      - name: Deploy website to HostEasy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT || '22' }}
-          local_path: './*'
-          remote_path: './'
-          sftp_only: true
-          sftpArgs: '-o ConnectTimeout=15'
+          protocol: ftp
+          port: 21
+          server-dir: ./
+          local-dir: ./
+          exclude: |
+            **/.git*/**
+            **/.github/**
+            **/.git*
